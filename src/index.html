@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Input</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Minecraft Input</h1>
+            <p class="subtitle">Controller to Keyboard/Mouse Mapper</p>
+        </header>
+
+        <section class="status-section">
+            <div class="status-card">
+                <div class="status-indicator" id="controllerIndicator"></div>
+                <div class="status-info">
+                    <span class="status-label">Controller</span>
+                    <span class="status-value" id="controllerStatus">Checking...</span>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="status-indicator" id="mappingIndicator"></div>
+                <div class="status-info">
+                    <span class="status-label">Mapping</span>
+                    <span class="status-value" id="mappingStatus">Inactive</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="controls-section">
+            <button class="toggle-btn" id="toggleBtn" disabled>
+                <span class="btn-text">Start Mapping</span>
+            </button>
+        </section>
+
+        <section class="settings-section">
+            <h2>Settings</h2>
+
+            <div class="setting-item">
+                <label for="deadzone">Deadzone</label>
+                <div class="slider-container">
+                    <input type="range" id="deadzone" min="0" max="0.5" step="0.01" value="0.15">
+                    <span class="slider-value" id="deadzoneValue">0.15</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label for="sensitivity">Mouse Sensitivity</label>
+                <div class="slider-container">
+                    <input type="range" id="sensitivity" min="0.5" max="10" step="0.1" value="2.5">
+                    <span class="slider-value" id="sensitivityValue">2.5</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label for="threshold">Stick Threshold</label>
+                <div class="slider-container">
+                    <input type="range" id="threshold" min="0.1" max="0.9" step="0.05" value="0.5">
+                    <span class="slider-value" id="thresholdValue">0.5</span>
+                </div>
+            </div>
+
+            <button class="reset-btn" id="resetBtn">Reset to Defaults</button>
+        </section>
+
+        <section class="mappings-section">
+            <h2>Default Mappings</h2>
+            <div class="mappings-grid">
+                <div class="mapping-item">
+                    <span class="mapping-input">Left Stick</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">WASD</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">Right Stick</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Mouse</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">A / Cross</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Space (Jump)</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">B / Circle</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Q (Drop)</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">X / Square</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">E (Inventory)</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">Y / Triangle</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">F (Swap)</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">LB / L1</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Shift (Sneak)</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">RB / R1</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Ctrl (Sprint)</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">LT / L2</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Right Click</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">RT / R2</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Left Click</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">Start</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Escape</span>
+                </div>
+                <div class="mapping-item">
+                    <span class="mapping-input">Select</span>
+                    <span class="mapping-arrow">→</span>
+                    <span class="mapping-output">Tab</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

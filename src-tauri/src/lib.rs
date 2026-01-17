@@ -1,0 +1,195 @@
+pub mod commands;
+pub mod config;
+pub mod controller;
+pub mod input_sim;
+pub mod mapper;
+
+use commands::AppState;
+use controller::Controller;
+use input_sim::InputSimulator;
+use mapper::Mapper;
+use std::collections::HashMap;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
+use tauri::RunEvent;
+
+pub fn run() {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    log::info!("Starting Minecraft Input...");
+
+    let app_state = Arc::new(AppState::new());
+    let state_for_thread = Arc::clone(&app_state);
+
+    // Start the input loop in a separate thread
+    thread::spawn(move || {
+        thread::sleep(Duration::from_secs(1));
+        input_loop(state_for_thread);
+    });
+
+    log::info!("Building Tauri app...");
+
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .manage(Arc::clone(&app_state))
+        .invoke_handler(tauri::generate_handler![
+            commands::get_status,
+            commands::start_mapping,
+            commands::stop_mapping,
+            commands::toggle_mapping,
+            commands::get_config,
+            commands::update_config,
+            commands::update_settings,
+            commands::reset_config,
+        ])
+        .setup(move |_app| {
+            log::info!("Setup complete!");
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| {
+            if let RunEvent::ExitRequested { api, .. } = event {
+                // Prevent exiting when window is closed, keep in tray
+                api.prevent_exit();
+            }
+        });
+}
+
+fn input_loop(state: Arc<AppState>) {
+    if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        input_loop_inner(state);
+    })) {
+        log::error!("Input loop panicked: {:?}", e);
+    }
+}
+
+fn input_loop_inner(state: Arc<AppState>) {
+    log::info!("Input loop starting...");
+
+    // Initialize controller
+    log::info!("Initializing controller...");
+    let mut controller = match Controller::new() {
+        Ok(c) => {
+            log::info!("Controller initialized successfully");
+            c
+        }
+        Err(e) => {
+            log::error!("Failed to initialize controller: {}", e);
+            return;
+        }
+    };
+
+    // Input simulator will be initialized only when user starts mapping
+    let mut input_sim: Option<InputSimulator> = None;
+
+    // Initialize mapper
+    let config = state.config.lock().clone();
+    let mut mapper = Mapper::new(config);
+
+    // Track axis values for continuous mouse movement
+    let mut axis_values: HashMap<String, f32> = HashMap::new();
+
+    // Update interval for mouse movement (approximately 120Hz)
+    let target_interval = Duration::from_micros(8333);
+    let mut last_update = Instant::now();
+
+    // Track if we were running last frame (to release keys only once when stopping)
+    let mut was_running = false;
+
+    // Update initial controller state
+    state
+        .controller_connected
+        .store(controller.is_connected(), Ordering::SeqCst);
+    if let Some(name) = controller.gamepad_name() {
+        *state.controller_name.lock() = Some(name);
+    }
+
+    loop {
+        let loop_start = Instant::now();
+
+        // Poll controller events
+        let events = controller.poll_events();
+        for event in &events {
+            match event {
+                controller::ControllerEvent::Connected(name) => {
+                    state.controller_connected.store(true, Ordering::SeqCst);
+                    *state.controller_name.lock() = Some(name.clone());
+                }
+                controller::ControllerEvent::Disconnected => {
+                    state.controller_connected.store(false, Ordering::SeqCst);
+                    *state.controller_name.lock() = None;
+                    // Stop mapping when controller disconnects
+                    state.is_running.store(false, Ordering::SeqCst);
+                }
+                controller::ControllerEvent::AxisChanged(axis, value) => {
+                    axis_values.insert(axis.clone(), *value);
+                }
+                _ => {}
+            }
+        }
+
+        // Only process inputs if mapping is active
+        let is_running = state.is_running.load(Ordering::SeqCst);
+
+        if is_running {
+            // Try to initialize input simulator if not yet done
+            if input_sim.is_none() {
+                match InputSimulator::new() {
+                    Ok(sim) => {
+                        log::info!("Input simulator initialized successfully");
+                        input_sim = Some(sim);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to initialize input simulator: {}", e);
+                        // Stop mapping since we can't simulate input
+                        state.is_running.store(false, Ordering::SeqCst);
+                        continue;
+                    }
+                }
+            }
+
+            if let Some(ref mut sim) = input_sim {
+                // Check if config was updated
+                let current_config = state.config.lock().clone();
+                mapper.update_config(current_config);
+
+                // Process button events
+                for event in &events {
+                    let actions = mapper.map_event(event);
+                    for action in actions {
+                        sim.execute(action);
+                    }
+                }
+
+                // Update mouse movement at fixed interval
+                let elapsed = last_update.elapsed();
+                if elapsed >= target_interval {
+                    if let Some(mouse_action) = mapper.update_mouse_movement(&axis_values) {
+                        sim.execute(mouse_action);
+                    }
+                    last_update = Instant::now();
+                }
+            }
+
+            was_running = true;
+        } else if was_running {
+            // When stopped, release any held keys (only once)
+            if let Some(ref mut sim) = input_sim {
+                let release_actions = mapper.release_all_keys();
+                for action in release_actions {
+                    sim.execute(action);
+                }
+            }
+            was_running = false;
+        }
+
+        // Sleep to prevent CPU spinning, but account for processing time
+        let elapsed = loop_start.elapsed();
+        if elapsed < Duration::from_millis(1) {
+            thread::sleep(Duration::from_millis(1) - elapsed);
+        }
+    }
+}
