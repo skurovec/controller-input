@@ -31,20 +31,20 @@ pub enum AxisMapping {
 impl Default for Config {
     fn default() -> Self {
         let mut buttons = HashMap::new();
-        buttons.insert("south".to_string(), "Space".to_string());       // A/Cross - Jump
-        buttons.insert("east".to_string(), "Q".to_string());            // B/Circle - Drop
+        buttons.insert("south".to_string(), "5".to_string());            // A/Cross - Hotbar 5
+        buttons.insert("east".to_string(), "Space".to_string());        // B/Circle - Jump
         buttons.insert("west".to_string(), "E".to_string());            // X/Square - Inventory
         buttons.insert("north".to_string(), "F".to_string());           // Y/Triangle - Swap hands
-        buttons.insert("left_trigger".to_string(), "RightClick".to_string());
-        buttons.insert("right_trigger".to_string(), "LeftClick".to_string());
-        buttons.insert("left_bumper".to_string(), "Shift".to_string());
-        buttons.insert("right_bumper".to_string(), "Control".to_string());
+        buttons.insert("left_trigger".to_string(), "LeftClick".to_string());
+        buttons.insert("right_trigger".to_string(), "RightClick".to_string());
+        buttons.insert("left_bumper".to_string(), "ScrollDown".to_string());  // LB - next hotbar slot
+        buttons.insert("right_bumper".to_string(), "ScrollUp".to_string());   // RB - prev hotbar slot
         buttons.insert("start".to_string(), "Escape".to_string());
         buttons.insert("select".to_string(), "Tab".to_string());
-        buttons.insert("left_thumb".to_string(), "F5".to_string());     // Left stick click
-        buttons.insert("right_thumb".to_string(), "F3".to_string());    // Right stick click
+        buttons.insert("left_thumb".to_string(), "Control".to_string()); // L3 - Sprint
+        buttons.insert("right_thumb".to_string(), "Shift".to_string()); // R3 - Sneak
         buttons.insert("dpad_up".to_string(), "1".to_string());
-        buttons.insert("dpad_down".to_string(), "5".to_string());
+        buttons.insert("dpad_down".to_string(), "Q".to_string());         // D-pad down - Drop
         buttons.insert("dpad_left".to_string(), "2".to_string());
         buttons.insert("dpad_right".to_string(), "3".to_string());
 
@@ -59,8 +59,8 @@ impl Default for Config {
         axes.insert(
             "left_stick_y".to_string(),
             AxisMapping::Keys {
-                negative: "W".to_string(),
-                positive: "S".to_string(),
+                negative: "S".to_string(),
+                positive: "W".to_string(),
             },
         );
         axes.insert(

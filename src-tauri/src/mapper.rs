@@ -1,6 +1,6 @@
 use crate::config::{AxisMapping, Config};
 use crate::controller::ControllerEvent;
-use crate::input_sim::{is_mouse_action, InputAction};
+use crate::input_sim::{is_mouse_action, is_scroll_action, InputAction};
 use std::collections::HashMap;
 
 pub struct Mapper {
@@ -38,6 +38,9 @@ impl Mapper {
                 if let Some(action_str) = self.config.buttons.get(button) {
                     if let Some(mouse_button) = is_mouse_action(action_str) {
                         actions.push(InputAction::MouseButtonPress(mouse_button));
+                    } else if let Some(scroll_amount) = is_scroll_action(action_str) {
+                        // Scroll actions trigger once on press
+                        actions.push(InputAction::MouseScroll(scroll_amount));
                     } else {
                         actions.push(InputAction::KeyPress(action_str.clone()));
                     }
@@ -47,6 +50,8 @@ impl Mapper {
                 if let Some(action_str) = self.config.buttons.get(button) {
                     if let Some(mouse_button) = is_mouse_action(action_str) {
                         actions.push(InputAction::MouseButtonRelease(mouse_button));
+                    } else if is_scroll_action(action_str).is_some() {
+                        // Scroll actions don't have a release
                     } else {
                         actions.push(InputAction::KeyRelease(action_str.clone()));
                     }

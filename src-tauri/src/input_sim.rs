@@ -14,6 +14,7 @@ pub enum InputAction {
     MouseMove(i32, i32),
     MouseButtonPress(MouseButtonType),
     MouseButtonRelease(MouseButtonType),
+    MouseScroll(i32),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -45,6 +46,7 @@ impl InputSimulator {
             InputAction::MouseMove(dx, dy) => self.mouse_move(*dx, *dy),
             InputAction::MouseButtonPress(button) => self.mouse_button_press(*button),
             InputAction::MouseButtonRelease(button) => self.mouse_button_release(*button),
+            InputAction::MouseScroll(amount) => self.mouse_scroll(*amount),
         }
     }
 
@@ -91,6 +93,13 @@ impl InputSimulator {
         };
         if let Err(e) = self.enigo.button(mb, Direction::Release) {
             log::warn!("Failed to release mouse button: {}", e);
+        }
+    }
+
+    fn mouse_scroll(&mut self, amount: i32) {
+        use enigo::Axis;
+        if let Err(e) = self.enigo.scroll(amount, Axis::Vertical) {
+            log::warn!("Failed to scroll: {}", e);
         }
     }
 }
@@ -276,6 +285,14 @@ pub fn is_mouse_action(name: &str) -> Option<MouseButtonType> {
         "leftclick" | "left_click" => Some(MouseButtonType::Left),
         "rightclick" | "right_click" => Some(MouseButtonType::Right),
         "middleclick" | "middle_click" => Some(MouseButtonType::Middle),
+        _ => None,
+    }
+}
+
+pub fn is_scroll_action(name: &str) -> Option<i32> {
+    match name.to_lowercase().as_str() {
+        "scrollup" | "scroll_up" => Some(1),
+        "scrolldown" | "scroll_down" => Some(-1),
         _ => None,
     }
 }

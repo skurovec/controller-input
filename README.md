@@ -17,19 +17,20 @@ A Tauri desktop application that maps controller/gamepad inputs to keyboard and 
 | Left Stick | WASD (movement) |
 | Right Stick | Mouse movement (camera) |
 | A / Cross | Space (jump) |
-| B / Circle | Q (drop item) |
 | X / Square | E (inventory) |
 | Y / Triangle | F (swap hands) |
-| LB / L1 | Shift (sneak/crouch) |
-| RB / R1 | Ctrl (sprint) |
-| LT / L2 | Right click (use/place) |
-| RT / R2 | Left click (attack/mine) |
+| LB / L1 | Next hotbar slot |
+| RB / R1 | Prev hotbar slot |
+| LT / L2 | Left click (attack/mine) |
+| RT / R2 | Right click (use/place) |
 | D-Pad Up | 1 (hotbar) |
-| D-Pad Down | 5 (hotbar) |
+| D-Pad Down | Q (drop item) |
+| D-Pad Left | 2 (hotbar) |
+| D-Pad Right | 3 (hotbar) |
 | Start | Escape (pause) |
 | Select/Back | Tab (player list) |
-| Left Stick Click | F5 (perspective) |
-| Right Stick Click | F3 (debug) |
+| L3 (Left Stick Click) | Ctrl (sprint) |
+| R3 (Right Stick Click) | Shift (sneak) |
 
 ## Development
 
@@ -76,20 +77,26 @@ mouse_sensitivity = 2.5
 stick_to_key_threshold = 0.5
 
 [buttons]
-south = "Space"
-east = "Q"
+south = "5"
+east = "Space"
 west = "E"
 north = "F"
-left_trigger = "RightClick"
-right_trigger = "LeftClick"
-left_bumper = "Shift"
-right_bumper = "Control"
+left_trigger = "LeftClick"
+right_trigger = "RightClick"
+left_bumper = "ScrollDown"
+right_bumper = "ScrollUp"
 start = "Escape"
 select = "Tab"
+left_thumb = "Control"
+right_thumb = "Shift"
+dpad_up = "1"
+dpad_down = "Q"
+dpad_left = "2"
+dpad_right = "3"
 
 [axes]
 left_stick_x = { type = "keys", negative = "A", positive = "D" }
-left_stick_y = { type = "keys", negative = "W", positive = "S" }
+left_stick_y = { type = "keys", negative = "S", positive = "W" }
 right_stick_x = { type = "mouse_x", sensitivity = 2.5 }
 right_stick_y = { type = "mouse_y", sensitivity = 2.5 }
 ```
