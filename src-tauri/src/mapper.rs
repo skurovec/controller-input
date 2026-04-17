@@ -35,7 +35,7 @@ impl Mapper {
 
         match event {
             ControllerEvent::ButtonPressed(button) => {
-                if let Some(action_str) = self.config.buttons.get(button) {
+                if let Some(action_str) = self.config.buttons.get(button).filter(|v| is_mapped(v)) {
                     if let Some(mouse_button) = is_mouse_action(action_str) {
                         actions.push(InputAction::MouseButtonPress(mouse_button));
                     } else if let Some(scroll_amount) = is_scroll_action(action_str) {
@@ -47,7 +47,7 @@ impl Mapper {
                 }
             }
             ControllerEvent::ButtonReleased(button) => {
-                if let Some(action_str) = self.config.buttons.get(button) {
+                if let Some(action_str) = self.config.buttons.get(button).filter(|v| is_mapped(v)) {
                     if let Some(mouse_button) = is_mouse_action(action_str) {
                         actions.push(InputAction::MouseButtonRelease(mouse_button));
                     } else if is_scroll_action(action_str).is_some() {
@@ -172,6 +172,10 @@ impl Mapper {
 
         actions
     }
+}
+
+fn is_mapped(value: &str) -> bool {
+    !value.is_empty() && !value.eq_ignore_ascii_case("none")
 }
 
 fn apply_deadzone(value: f32, deadzone: f32) -> f32 {

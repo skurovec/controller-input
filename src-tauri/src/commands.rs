@@ -96,6 +96,26 @@ pub fn update_settings(
 }
 
 #[tauri::command]
+pub fn update_button_mapping(
+    state: State<Arc<AppState>>,
+    button: String,
+    action: Option<String>,
+) -> Result<(), String> {
+    let mut config = state.config.lock();
+    match action.as_deref() {
+        None | Some("") | Some("None") => {
+            config.buttons.remove(&button);
+        }
+        Some(value) => {
+            config.buttons.insert(button.clone(), value.to_string());
+        }
+    }
+    config.save()?;
+    log::info!("Button mapping updated: {} -> {:?}", button, action);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn reset_config(state: State<Arc<AppState>>) -> Result<Config, String> {
     let mut config = state.config.lock();
     *config = Config::default();

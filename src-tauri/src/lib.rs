@@ -42,6 +42,7 @@ pub fn run() {
             commands::get_config,
             commands::update_config,
             commands::update_settings,
+            commands::update_button_mapping,
             commands::reset_config,
         ])
         .setup(move |_app| {

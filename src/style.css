@@ -235,6 +235,62 @@ header h1 {
     gap: 8px;
 }
 
+.mappings-static {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.button-mappings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.button-mapping-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1.2fr;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.button-mapping-row .mapping-input {
+    color: var(--text-secondary);
+}
+
+.button-mapping-row .mapping-arrow {
+    color: var(--accent);
+}
+
+.mapping-select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--bg-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+        linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+    background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 24px;
+}
+
+.mapping-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
 .mapping-item {
     display: flex;
     align-items: center;
@@ -266,7 +322,8 @@ header h1 {
         flex-direction: column;
     }
 
-    .mappings-grid {
+    .mappings-grid,
+    .mappings-static {
         grid-template-columns: 1fr;
     }
 }
