@@ -193,7 +193,95 @@ fn string_to_key(name: &str) -> Option<Key> {
         }
     }
 
-    #[cfg(not(target_os = "macos"))]
+    // Windows: use virtual-key codes via Key::Other so SendInput emits real VK
+    // events (not KEYEVENTF_UNICODE, which games like Minecraft ignore).
+    #[cfg(target_os = "windows")]
+    {
+        match name.to_lowercase().as_str() {
+            // Letters (VK A-Z = 0x41..0x5A)
+            "a" => Some(Key::Other(0x41)),
+            "b" => Some(Key::Other(0x42)),
+            "c" => Some(Key::Other(0x43)),
+            "d" => Some(Key::Other(0x44)),
+            "e" => Some(Key::Other(0x45)),
+            "f" => Some(Key::Other(0x46)),
+            "g" => Some(Key::Other(0x47)),
+            "h" => Some(Key::Other(0x48)),
+            "i" => Some(Key::Other(0x49)),
+            "j" => Some(Key::Other(0x4A)),
+            "k" => Some(Key::Other(0x4B)),
+            "l" => Some(Key::Other(0x4C)),
+            "m" => Some(Key::Other(0x4D)),
+            "n" => Some(Key::Other(0x4E)),
+            "o" => Some(Key::Other(0x4F)),
+            "p" => Some(Key::Other(0x50)),
+            "q" => Some(Key::Other(0x51)),
+            "r" => Some(Key::Other(0x52)),
+            "s" => Some(Key::Other(0x53)),
+            "t" => Some(Key::Other(0x54)),
+            "u" => Some(Key::Other(0x55)),
+            "v" => Some(Key::Other(0x56)),
+            "w" => Some(Key::Other(0x57)),
+            "x" => Some(Key::Other(0x58)),
+            "y" => Some(Key::Other(0x59)),
+            "z" => Some(Key::Other(0x5A)),
+            // Numbers (VK 0-9 = 0x30..0x39, top row)
+            "0" => Some(Key::Other(0x30)),
+            "1" => Some(Key::Other(0x31)),
+            "2" => Some(Key::Other(0x32)),
+            "3" => Some(Key::Other(0x33)),
+            "4" => Some(Key::Other(0x34)),
+            "5" => Some(Key::Other(0x35)),
+            "6" => Some(Key::Other(0x36)),
+            "7" => Some(Key::Other(0x37)),
+            "8" => Some(Key::Other(0x38)),
+            "9" => Some(Key::Other(0x39)),
+            // Function keys
+            "f1" => Some(Key::F1),
+            "f2" => Some(Key::F2),
+            "f3" => Some(Key::F3),
+            "f4" => Some(Key::F4),
+            "f5" => Some(Key::F5),
+            "f6" => Some(Key::F6),
+            "f7" => Some(Key::F7),
+            "f8" => Some(Key::F8),
+            "f9" => Some(Key::F9),
+            "f10" => Some(Key::F10),
+            "f11" => Some(Key::F11),
+            "f12" => Some(Key::F12),
+            // Modifiers
+            "shift" => Some(Key::Shift),
+            "control" | "ctrl" => Some(Key::Control),
+            "alt" => Some(Key::Alt),
+            "meta" | "super" | "command" | "cmd" => Some(Key::Meta),
+            // Special keys
+            "space" => Some(Key::Space),
+            "escape" | "esc" => Some(Key::Escape),
+            "tab" => Some(Key::Tab),
+            "enter" | "return" => Some(Key::Return),
+            "backspace" => Some(Key::Backspace),
+            "delete" | "del" => Some(Key::Delete),
+            "home" => Some(Key::Home),
+            "end" => Some(Key::End),
+            "pageup" => Some(Key::PageUp),
+            "pagedown" => Some(Key::PageDown),
+            // Arrow keys
+            "up" | "uparrow" => Some(Key::UpArrow),
+            "down" | "downarrow" => Some(Key::DownArrow),
+            "left" | "leftarrow" => Some(Key::LeftArrow),
+            "right" | "rightarrow" => Some(Key::RightArrow),
+            // Mouse buttons as special strings (not actual keys)
+            "leftclick" | "left_click" => None,
+            "rightclick" | "right_click" => None,
+            "middleclick" | "middle_click" => None,
+            _ => {
+                log::warn!("Unknown key: {}", name);
+                None
+            }
+        }
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         match name.to_lowercase().as_str() {
             // Letters
