@@ -155,7 +155,10 @@ fn input_loop_inner(state: Arc<AppState>) {
             if let Some(ref mut sim) = input_sim {
                 // Check if config was updated
                 let current_config = state.config.lock().clone();
-                mapper.update_config(current_config);
+                let config_release_actions = mapper.update_config(current_config);
+                for action in config_release_actions {
+                    sim.execute(action);
+                }
 
                 // Process button events
                 for event in &events {

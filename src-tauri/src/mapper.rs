@@ -1,12 +1,16 @@
 use crate::config::{AxisMapping, Config};
 use crate::controller::ControllerEvent;
-use crate::input_sim::{is_mouse_action, is_scroll_action, InputAction};
+use crate::input_sim::{canonicalize_action, is_mouse_action, is_scroll_action, InputAction};
 use std::collections::HashMap;
 
 pub struct Mapper {
     config: Config,
     // Track which keys are currently pressed due to axis thresholds
     axis_key_states: HashMap<String, bool>,
+    // Track the action that was fired when each controller button was pressed,
+    // so release can undo the exact action that was pressed even if the mapping
+    // changes mid-hold.
+    button_held_actions: HashMap<String, String>,
     // Track accumulated mouse movement for smooth sub-pixel handling
     mouse_accumulator_x: f32,
     mouse_accumulator_y: f32,
@@ -17,13 +21,49 @@ impl Mapper {
         Mapper {
             config,
             axis_key_states: HashMap::new(),
+            button_held_actions: HashMap::new(),
             mouse_accumulator_x: 0.0,
             mouse_accumulator_y: 0.0,
         }
     }
 
-    pub fn update_config(&mut self, config: Config) {
+    pub fn update_config(&mut self, config: Config) -> Vec<InputAction> {
+        // Release any held key/mouse whose effective mapping has changed or been
+        // removed. Without this, a key pressed with the old mapping would stay
+        // held at the OS level forever and the next press with the new mapping
+        // would appear to fire both keys at once. Comparison uses canonical
+        // action names so alias-only edits (Ctrl↔Control, LeftClick↔left_click,
+        // etc.) don't force a spurious release.
+        let changed: Vec<String> = self
+            .button_held_actions
+            .iter()
+            .filter(|(button, held_action)| {
+                let new_action = config
+                    .buttons
+                    .get(*button)
+                    .map(|s| s.as_str())
+                    .unwrap_or("");
+                canonicalize_action(new_action) != canonicalize_action(held_action)
+            })
+            .map(|(button, _)| button.clone())
+            .collect();
+
+        let mut actions = Vec::new();
+        for button in changed {
+            let held = self.button_held_actions.remove(&button).unwrap();
+            // If another held button still produces the same effective action,
+            // the OS-level key/button must stay down — only refcount drops.
+            let held_canonical = canonicalize_action(&held);
+            let still_held = self
+                .button_held_actions
+                .values()
+                .any(|other| canonicalize_action(other) == held_canonical);
+            if !still_held {
+                actions.extend(release_action_for(&held));
+            }
+        }
         self.config = config;
+        actions
     }
 
     pub fn get_config(&self) -> &Config {
@@ -35,26 +75,30 @@ impl Mapper {
 
         match event {
             ControllerEvent::ButtonPressed(button) => {
-                if let Some(action_str) = self.config.buttons.get(button).filter(|v| is_mapped(v)) {
-                    if let Some(mouse_button) = is_mouse_action(action_str) {
+                if let Some(action_str) = self
+                    .config
+                    .buttons
+                    .get(button)
+                    .filter(|v| is_mapped(v))
+                    .cloned()
+                {
+                    if let Some(mouse_button) = is_mouse_action(&action_str) {
                         actions.push(InputAction::MouseButtonPress(mouse_button));
-                    } else if let Some(scroll_amount) = is_scroll_action(action_str) {
-                        // Scroll actions trigger once on press
+                        self.button_held_actions
+                            .insert(button.clone(), action_str);
+                    } else if let Some(scroll_amount) = is_scroll_action(&action_str) {
+                        // Scroll actions trigger once on press and have no release
                         actions.push(InputAction::MouseScroll(scroll_amount));
                     } else {
                         actions.push(InputAction::KeyPress(action_str.clone()));
+                        self.button_held_actions
+                            .insert(button.clone(), action_str);
                     }
                 }
             }
             ControllerEvent::ButtonReleased(button) => {
-                if let Some(action_str) = self.config.buttons.get(button).filter(|v| is_mapped(v)) {
-                    if let Some(mouse_button) = is_mouse_action(action_str) {
-                        actions.push(InputAction::MouseButtonRelease(mouse_button));
-                    } else if is_scroll_action(action_str).is_some() {
-                        // Scroll actions don't have a release
-                    } else {
-                        actions.push(InputAction::KeyRelease(action_str.clone()));
-                    }
+                if let Some(action_str) = self.button_held_actions.remove(button) {
+                    actions.extend(release_action_for(&action_str));
                 }
             }
             ControllerEvent::AxisChanged(axis, value) => {
@@ -166,11 +210,26 @@ impl Mapper {
             }
         }
 
+        // Release all button-triggered keys/mouse buttons
+        for (_, action_str) in self.button_held_actions.drain() {
+            actions.extend(release_action_for(&action_str));
+        }
+
         self.axis_key_states.clear();
         self.mouse_accumulator_x = 0.0;
         self.mouse_accumulator_y = 0.0;
 
         actions
+    }
+}
+
+fn release_action_for(action_str: &str) -> Option<InputAction> {
+    if let Some(mouse_button) = is_mouse_action(action_str) {
+        Some(InputAction::MouseButtonRelease(mouse_button))
+    } else if is_scroll_action(action_str).is_some() {
+        None
+    } else {
+        Some(InputAction::KeyRelease(action_str.to_string()))
     }
 }
 

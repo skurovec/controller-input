@@ -384,3 +384,29 @@ pub fn is_scroll_action(name: &str) -> Option<i32> {
         _ => None,
     }
 }
+
+/// Return a canonical lowercase name for a configured action, collapsing
+/// known aliases (e.g. `ctrl`/`control`, `enter`/`return`, `left_click`/
+/// `leftclick`) to a single spelling. Used to decide whether two action
+/// strings refer to the same effective key/mouse/scroll action.
+pub fn canonicalize_action(name: &str) -> String {
+    let lower = name.to_lowercase();
+    let canonical = match lower.as_str() {
+        "control" | "ctrl" => "control",
+        "meta" | "super" | "command" | "cmd" => "meta",
+        "escape" | "esc" => "escape",
+        "enter" | "return" => "enter",
+        "delete" | "del" => "delete",
+        "up" | "uparrow" => "up",
+        "down" | "downarrow" => "down",
+        "left" | "leftarrow" => "left",
+        "right" | "rightarrow" => "right",
+        "leftclick" | "left_click" => "leftclick",
+        "rightclick" | "right_click" => "rightclick",
+        "middleclick" | "middle_click" => "middleclick",
+        "scrollup" | "scroll_up" => "scrollup",
+        "scrolldown" | "scroll_down" => "scrolldown",
+        _ => return lower,
+    };
+    canonical.to_string()
+}
