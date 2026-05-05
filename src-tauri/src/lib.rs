@@ -113,11 +113,19 @@ fn input_loop_inner(state: Arc<AppState>) {
 
         // Poll controller events
         let events = controller.poll_events();
+        // A Connected event may signal a swap to a different physical
+        // controller (the active one disconnected and another took over). In
+        // that case any axis values and any keys/mouse buttons the mapper is
+        // currently holding belong to the previous controller and would
+        // otherwise stay stuck at the OS level.
+        let mut controller_swap = false;
         for event in &events {
             match event {
                 controller::ControllerEvent::Connected(name) => {
                     state.controller_connected.store(true, Ordering::SeqCst);
                     *state.controller_name.lock() = Some(name.clone());
+                    axis_values.clear();
+                    controller_swap = true;
                 }
                 controller::ControllerEvent::Disconnected => {
                     state.controller_connected.store(false, Ordering::SeqCst);
@@ -129,6 +137,19 @@ fn input_loop_inner(state: Arc<AppState>) {
                     axis_values.insert(axis.clone(), *value);
                 }
                 _ => {}
+            }
+        }
+
+        // Release any keys/mouse buttons the mapper still holds for the
+        // previous controller before processing this iteration's input
+        // events. Done unconditionally so mapper internal state stays in
+        // sync with the OS even when input_sim isn't initialized yet.
+        if controller_swap {
+            let release_actions = mapper.release_all_keys();
+            if let Some(ref mut sim) = input_sim {
+                for action in release_actions {
+                    sim.execute(action);
+                }
             }
         }
 
