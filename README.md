@@ -55,6 +55,27 @@ yarn dev
 yarn build
 ```
 
+### Windows controller backends
+
+The default build uses XInput for background input from Xbox-compatible controllers.
+Native DualSense controllers require the alternative Windows Gaming Input backend:
+
+```bash
+cd src-tauri
+cargo build --release --no-default-features --features windows-wgi,tauri/custom-protocol
+```
+
+Do not enable `windows-xinput` and `windows-wgi` together. Gilrs requires exactly
+one Windows backend. The WGI variant includes native PS5 controller mappings, but
+background input depends on the device and driver. Verify buttons and sticks both
+with the mapper focused and with Minecraft focused before relying on this variant.
+The default XInput build remains available if WGI background input fails.
+
+For Windows GNU cross-compilation, also pass `--target x86_64-pc-windows-gnu`
+and configure a compatible linker. Distribute `WebView2Loader.dll` alongside the
+executable. Both variants require the WebView2 Runtime and use the same saved
+configuration. Close one variant completely before starting the other.
+
 ### macOS Permissions
 
 On macOS, you need to grant Accessibility permissions for the app to simulate keyboard/mouse input:
