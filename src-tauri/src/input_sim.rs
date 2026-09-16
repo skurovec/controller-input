@@ -27,7 +27,14 @@ pub enum MouseButtonType {
 impl InputSimulator {
     pub fn new() -> Result<Self, String> {
         let result = std::panic::catch_unwind(|| {
-            let settings = Settings::default();
+            let settings = Settings {
+                // Enigo otherwise converts relative moves into absolute cursor positions,
+                // which are unsuitable for Minecraft 26.3's relative mouse mode.
+                // Real relative events also follow Windows pointer speed/acceleration.
+                #[cfg(target_os = "windows")]
+                windows_subject_to_mouse_speed_and_acceleration_level: true,
+                ..Settings::default()
+            };
             Enigo::new(&settings)
         });
 
