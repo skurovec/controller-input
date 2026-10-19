@@ -1,23 +1,18 @@
 [
     {
-        "crates": ["alloc-stdlib"],
+        "crates": [
+            "alloc-stdlib"
+        ],
         "source": "https://github.com/dropbox/rust-alloc-no-stdlib/tree/0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
         "files": ["upstream/alloc-no-stdlib/LICENSE"]
     },
     {
-        "crates": ["convert_case"],
-        "source": "https://github.com/rutrum/convert-case/tree/637e1aec1717e3a4af07dff1c1dec7a4eb971b2a",
-        "files": ["upstream/convert-case/LICENSE"]
-    },
-    {
-        "crates": ["gilrs", "gilrs-core"],
+        "crates": [
+            "gilrs",
+            "gilrs-core"
+        ],
         "source": "https://gitlab.com/gilrs-project/gilrs/-/tree/65532a53aef08e050557012286753e6cb0fe9e20",
         "files": ["upstream/gilrs/LICENSE-MIT"]
-    },
-    {
-        "crates": ["match_token"],
-        "source": "https://github.com/servo/html5ever/tree/7760920edff08e6dfd4b62affee39d8084e9dc45",
-        "files": ["upstream/html5ever/COPYRIGHT", "upstream/html5ever/LICENSE-MIT"]
     },
     {
         "crates": [
@@ -44,16 +39,6 @@
         "files": ["upstream/objc2/LICENSE-MIT.txt"]
     },
     {
-        "crates": ["phf", "phf_generator", "phf_macros", "phf_shared"],
-        "source": "https://github.com/sfackler/rust-phf/tree/7dabcc5d594a1afe8be89b169143f987c79ec8d7",
-        "files": ["upstream/rust-phf/LICENSE"]
-    },
-    {
-        "crates": ["selectors"],
-        "source": "https://github.com/servo/servo/tree/ddd55f9146dc0aa4bb9ecaa9a54a957d53198257",
-        "files": ["upstream/servo/LICENSE"]
-    },
-    {
         "crates": [
             "unic-char-property",
             "unic-char-range",
@@ -62,26 +47,24 @@
             "unic-ucd-version"
         ],
         "source": "https://github.com/open-i18n/rust-unic/tree/37bd705602b5d3a87e44a6b7819906ab588e22ac",
-        "files": ["upstream/rust-unic/COPYRIGHT.md", "upstream/rust-unic/LICENSE-MIT"]
+        "files": [
+            "upstream/rust-unic/COPYRIGHT.md",
+            "upstream/rust-unic/LICENSE-MIT"
+        ]
     },
     {
-        "crates": ["webview2-com", "webview2-com-macros", "webview2-com-sys"],
+        "crates": [
+            "webview2-com",
+            "webview2-com-sys"
+        ],
         "source": "https://github.com/wravery/webview2-rs/tree/edc2caf886175ccaebe86078c9cfe1ae2a187328",
         "files": ["upstream/webview2-rs/LICENSE"]
     },
     {
-        "crates": ["dispatch"],
+        "crates": [
+            "dispatch"
+        ],
         "note": "No license file is published for this crate or in its repository. Its Cargo.toml declares the license \"MIT\" and the author \"Steven Sheldon\".",
-        "files": ["MIT.txt"]
-    },
-    {
-        "crates": ["fxhash"],
-        "note": "No license file is published for this crate or in its repository. Its Cargo.toml declares the license \"Apache-2.0/MIT\" (MIT used here) and the author \"cbreeden <github@u.breeden.cc>\".",
-        "files": ["MIT.txt"]
-    },
-    {
-        "crates": ["mac"],
-        "note": "No license file is published for this crate or in its repository. Its Cargo.toml declares the license \"MIT/Apache-2.0\" (MIT used here) and the author \"Jonathan Reem <jonathan.reem@gmail.com>\".",
         "files": ["MIT.txt"]
     }
 ]

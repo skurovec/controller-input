@@ -38,9 +38,12 @@ function runCargo(cargoArguments) {
 }
 
 /**
- * Packages compiled into the app through normal (non-build, non-dev)
- * dependencies. cargo tree applies the same feature resolution as the build;
- * cargo metadata alone would also list crates enabled only for build scripts.
+ * Packages compiled into the app binary: normal dependencies, excluding build
+ * scripts, dev dependencies and proc-macros, which only run at compile time.
+ * cargo tree applies the same feature resolution as the build; cargo metadata
+ * alone would also list crates enabled only for build scripts. Proc-macro
+ * dependencies are resolved for the host, so excluding them also keeps the
+ * output identical on every machine.
  */
 function shippedPackages() {
     const metadata = JSON.parse(runCargo(["metadata", "--format-version=1", "--all-features"]));
@@ -55,7 +58,7 @@ function shippedPackages() {
         const tree = runCargo([
             "tree",
             "--all-features",
-            "--edges=normal",
+            "--edges=normal,no-proc-macro",
             `--target=${target}`,
             "--prefix=none",
             "--format={p}",
@@ -168,6 +171,15 @@ const content = render(shippedPackages(), readOverrides());
 if (process.argv.includes("--check")) {
     const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";
     if (current !== content) {
+        const crateLines = (text) => new Set(text.split("\n").filter((line) => line.startsWith("- ")));
+        const expected = crateLines(content);
+        const actual = crateLines(current);
+        for (const line of expected) {
+            if (!actual.has(line)) console.error(`missing crate: ${line.slice(2)}`);
+        }
+        for (const line of actual) {
+            if (!expected.has(line)) console.error(`extra crate: ${line.slice(2)}`);
+        }
         console.error(
             "THIRD_PARTY_LICENSES.txt is out of date. Run: node scripts/third-party-licenses.mjs",
         );
