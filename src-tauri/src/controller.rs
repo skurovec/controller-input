@@ -1,4 +1,4 @@
-use gilrs::{Axis, Button, Event, EventType, Gilrs, GamepadId};
+use gilrs::{Axis, Button, Event, EventType, GamepadId, Gilrs};
 use std::collections::HashMap;
 
 pub struct Controller {
@@ -25,9 +25,7 @@ pub enum ControllerEvent {
 
 impl Controller {
     pub fn new() -> Result<Self, String> {
-        let result = std::panic::catch_unwind(|| {
-            Gilrs::new()
-        });
+        let result = std::panic::catch_unwind(|| Gilrs::new().map_err(|e| e.to_string()));
 
         let gilrs = match result {
             Ok(Ok(g)) => g,
@@ -341,7 +339,8 @@ fn button_to_string(button: Button) -> String {
         Button::DPadLeft => "dpad_left",
         Button::DPadRight => "dpad_right",
         Button::Unknown => "unknown",
-    }.to_string()
+    }
+    .to_string()
 }
 
 fn axis_to_string(axis: Axis) -> String {
@@ -355,7 +354,8 @@ fn axis_to_string(axis: Axis) -> String {
         Axis::DPadX => "dpad_x",
         Axis::DPadY => "dpad_y",
         Axis::Unknown => "unknown",
-    }.to_string()
+    }
+    .to_string()
 }
 
 fn string_to_axis(name: &str) -> Option<Axis> {

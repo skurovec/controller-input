@@ -22,6 +22,12 @@ impl AppState {
     }
 }
 
+impl Default for AppState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[tauri::command]
 pub fn get_status(state: State<Arc<AppState>>) -> StatusResponse {
     StatusResponse {

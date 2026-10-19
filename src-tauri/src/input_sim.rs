@@ -1,7 +1,4 @@
-use enigo::{
-    Coordinate, Direction, Enigo, Key, Keyboard, Mouse, Settings,
-    Button as MouseButton,
-};
+use enigo::{Button as MouseButton, Coordinate, Direction, Enigo, Key, Keyboard, Mouse, Settings};
 
 pub struct InputSimulator {
     enigo: Enigo,
@@ -41,7 +38,9 @@ impl InputSimulator {
         match result {
             Ok(Ok(enigo)) => Ok(InputSimulator { enigo }),
             Ok(Err(e)) => Err(format!("Failed to create enigo: {}", e)),
-            Err(_) => Err("Enigo initialization panicked (accessibility permissions needed?)".to_string()),
+            Err(_) => {
+                Err("Enigo initialization panicked (accessibility permissions needed?)".to_string())
+            }
         }
     }
 

@@ -84,15 +84,13 @@ impl Mapper {
                 {
                     if let Some(mouse_button) = is_mouse_action(&action_str) {
                         actions.push(InputAction::MouseButtonPress(mouse_button));
-                        self.button_held_actions
-                            .insert(button.clone(), action_str);
+                        self.button_held_actions.insert(button.clone(), action_str);
                     } else if let Some(scroll_amount) = is_scroll_action(&action_str) {
                         // Scroll actions trigger once on press and have no release
                         actions.push(InputAction::MouseScroll(scroll_amount));
                     } else {
                         actions.push(InputAction::KeyPress(action_str.clone()));
-                        self.button_held_actions
-                            .insert(button.clone(), action_str);
+                        self.button_held_actions.insert(button.clone(), action_str);
                     }
                 }
             }
@@ -112,7 +110,8 @@ impl Mapper {
                             // Handle negative direction
                             let neg_key = format!("{}_{}", axis, "neg");
                             let neg_pressed = value < -threshold;
-                            let neg_was_pressed = *self.axis_key_states.get(&neg_key).unwrap_or(&false);
+                            let neg_was_pressed =
+                                *self.axis_key_states.get(&neg_key).unwrap_or(&false);
 
                             if neg_pressed && !neg_was_pressed {
                                 actions.push(InputAction::KeyPress(negative.clone()));
@@ -125,7 +124,8 @@ impl Mapper {
                             // Handle positive direction
                             let pos_key = format!("{}_{}", axis, "pos");
                             let pos_pressed = value > threshold;
-                            let pos_was_pressed = *self.axis_key_states.get(&pos_key).unwrap_or(&false);
+                            let pos_was_pressed =
+                                *self.axis_key_states.get(&pos_key).unwrap_or(&false);
 
                             if pos_pressed && !pos_was_pressed {
                                 actions.push(InputAction::KeyPress(positive.clone()));
@@ -147,7 +147,10 @@ impl Mapper {
         actions
     }
 
-    pub fn update_mouse_movement(&mut self, axis_values: &HashMap<String, f32>) -> Option<InputAction> {
+    pub fn update_mouse_movement(
+        &mut self,
+        axis_values: &HashMap<String, f32>,
+    ) -> Option<InputAction> {
         let deadzone = self.config.settings.deadzone;
         let base_sensitivity = self.config.settings.mouse_sensitivity;
 
