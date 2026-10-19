@@ -157,6 +157,19 @@ right_stick_y = { type = "mouse_y", sensitivity = 2.5 }
 
 [MIT](LICENSE)
 
+Release bundles include `LICENSE` and
+[`THIRD_PARTY_LICENSES.txt`](THIRD_PARTY_LICENSES.txt), the license and
+copyright notices of every bundled Rust crate. After changing dependencies,
+regenerate the file and commit it. CI fails when it is out of date.
+
+```bash
+node scripts/third-party-licenses.mjs
+```
+
+The script copies license files verbatim from each crate. When a crate
+publishes none, it uses the upstream copy mapped in
+`third-party/overrides.json`, and it fails for crates that have neither.
+
 ## Trademarks
 
 NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG
