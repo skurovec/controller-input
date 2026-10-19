@@ -1,5 +1,4 @@
 const { invoke } = window.__TAURI__.core;
-const { listen } = window.__TAURI__.event;
 
 // DOM Elements
 const controllerIndicator = document.getElementById('controllerIndicator');
@@ -109,12 +108,6 @@ const init = async () => {
 
     // Poll status every 500ms
     setInterval(updateStatus, 500);
-
-    // Listen for status changes from tray
-    listen('status-changed', (event) => {
-        isRunning = event.payload;
-        updateUI();
-    });
 };
 
 // Load config from backend

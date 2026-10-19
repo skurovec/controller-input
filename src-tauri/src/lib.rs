@@ -10,6 +10,7 @@ use input_sim::InputSimulator;
 use mapper::Mapper;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -22,11 +23,12 @@ pub fn run() {
 
     let app_state = Arc::new(AppState::new());
     let state_for_thread = Arc::clone(&app_state);
+    let (shutdown_sender, shutdown_receiver) = mpsc::channel();
 
     // Start the input loop in a separate thread
     thread::spawn(move || {
         thread::sleep(Duration::from_secs(1));
-        input_loop(state_for_thread);
+        input_loop(state_for_thread, shutdown_receiver);
     });
 
     log::info!("Building Tauri app...");
@@ -51,23 +53,35 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, event| {
-            if let RunEvent::ExitRequested { api, .. } = event {
-                // Prevent exiting when window is closed, keep in tray
-                api.prevent_exit();
+        .run(move |_app_handle, event| {
+            if let RunEvent::Exit = event {
+                release_input_before_exit(&shutdown_sender);
             }
         });
 }
 
-fn input_loop(state: Arc<AppState>) {
+/// Asks the input loop to release held keys and stop, and waits briefly for
+/// its confirmation so no key or mouse button stays pressed after exit.
+fn release_input_before_exit(shutdown: &Sender<Sender<()>>) {
+    let (released_sender, released_receiver) = mpsc::channel();
+    if shutdown.send(released_sender).is_err() {
+        // The input loop has already ended and dropped its receiver.
+        return;
+    }
+    if let Err(e) = released_receiver.recv_timeout(Duration::from_millis(250)) {
+        log::warn!("Input loop did not confirm key release before exit: {}", e);
+    }
+}
+
+fn input_loop(state: Arc<AppState>, shutdown: Receiver<Sender<()>>) {
     if let Err(e) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        input_loop_inner(state);
+        input_loop_inner(state, shutdown);
     })) {
         log::error!("Input loop panicked: {:?}", e);
     }
 }
 
-fn input_loop_inner(state: Arc<AppState>) {
+fn input_loop_inner(state: Arc<AppState>, shutdown: Receiver<Sender<()>>) {
     log::info!("Input loop starting...");
 
     // Initialize controller
@@ -110,6 +124,21 @@ fn input_loop_inner(state: Arc<AppState>) {
 
     loop {
         let loop_start = Instant::now();
+
+        if let Ok(released) = shutdown.try_recv() {
+            state.is_running.store(false, Ordering::SeqCst);
+            let release_actions = mapper.release_all_keys();
+            if let Some(ref mut sim) = input_sim {
+                for action in release_actions {
+                    sim.execute(action);
+                }
+            }
+            if released.send(()).is_err() {
+                log::warn!("Released held keys after the exit handler stopped waiting");
+            }
+            log::info!("Input loop stopped for exit");
+            return;
+        }
 
         // Poll controller events
         let events = controller.poll_events();
