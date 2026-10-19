@@ -2,6 +2,21 @@
 
 A Tauri desktop application that maps controller/gamepad inputs to keyboard and mouse. The default mappings target Minecraft Java Edition.
 
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Controller status, start button, and sensitivity settings" width="45%">
+  <img src="docs/screenshots/button-mapping.png" alt="Button mapping with a key or mouse action for each controller button" width="45%">
+</p>
+
+## Why
+
+I wanted my son to be able to play Minecraft with a controller. Minecraft Java
+Edition has no built-in controller support, and the usual workarounds mean
+installing mods or running the game through Steam Input with a Steam account.
+
+Controller Input is a small standalone app instead. It turns gamepad input into
+the keyboard and mouse events the game already understands, so the game itself
+stays untouched. Start it, press **Start Mapping**, and play.
+
 ## Features
 
 - Maps controller buttons to keyboard keys
