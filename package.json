@@ -1,5 +1,5 @@
 {
-    "name": "minecraft-input",
+    "name": "controller-input",
     "version": "0.1.0",
     "private": true,
     "scripts": {

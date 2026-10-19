@@ -18,7 +18,7 @@ use tauri::RunEvent;
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    log::info!("Starting Minecraft Input...");
+    log::info!("Starting Controller Input...");
 
     let app_state = Arc::new(AppState::new());
     let state_for_thread = Arc::clone(&app_state);

@@ -1,17 +1,17 @@
 [package]
-name = "minecraft-input"
+name = "controller-input"
 version = "0.1.0"
 edition = "2021"
-description = "Controller to keyboard/mouse mapper for Minecraft"
+description = "Controller to keyboard/mouse mapper"
 authors = ["You"]
 license = "MIT"
 
 [lib]
-name = "minecraft_input_lib"
+name = "controller_input_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "minecraft-input"
+name = "controller-input"
 path = "src/main.rs"
 
 [build-dependencies]

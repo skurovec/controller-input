@@ -1,6 +1,6 @@
-# Minecraft Input
+# Controller Input
 
-A Tauri desktop application that maps controller/gamepad inputs to keyboard and mouse for Minecraft Java Edition.
+A Tauri desktop application that maps controller/gamepad inputs to keyboard and mouse. The default mappings target Minecraft Java Edition.
 
 ## Features
 
@@ -81,13 +81,19 @@ configuration. Close one variant completely before starting the other.
 On macOS, you need to grant Accessibility permissions for the app to simulate keyboard/mouse input:
 
 1. Open System Preferences -> Security & Privacy -> Privacy -> Accessibility
-2. Add the Minecraft Input app to the list
+2. Add the Controller Input app to the list
+
+After upgrading from the old app name, grant Accessibility permission to Controller Input again.
 
 ## Configuration
 
 Configuration is stored in:
-- **macOS**: `~/Library/Application Support/minecraft-input/config.toml`
-- **Windows**: `%APPDATA%/minecraft-input/config.toml`
+- **macOS**: `~/Library/Application Support/controller-input/config.toml`
+- **Windows**: `%APPDATA%/controller-input/config.toml`
+
+If the new configuration file does not exist, the app reads the previous
+`minecraft-input/config.toml` from the same parent directory. Saving settings
+writes to `controller-input/config.toml` and leaves the old file unchanged.
 
 ### Example Configuration
 

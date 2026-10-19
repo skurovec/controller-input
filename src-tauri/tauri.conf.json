@@ -1,8 +1,8 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "Minecraft Input",
+    "productName": "Controller Input",
     "version": "0.1.0",
-    "identifier": "com.minecraft-input.app",
+    "identifier": "com.controller-input.app",
     "build": {
         "frontendDist": "../src"
     },
@@ -10,7 +10,7 @@
         "withGlobalTauri": true,
         "windows": [
             {
-                "title": "Minecraft Input",
+                "title": "Controller Input",
                 "width": 600,
                 "height": 500,
                 "resizable": true,

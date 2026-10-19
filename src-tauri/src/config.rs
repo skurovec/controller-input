@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+#[cfg(test)]
+#[path = "config_tests.rs"]
+mod tests;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -31,20 +35,20 @@ pub enum AxisMapping {
 impl Default for Config {
     fn default() -> Self {
         let mut buttons = HashMap::new();
-        buttons.insert("south".to_string(), "5".to_string());            // A/Cross - Hotbar 5
-        buttons.insert("east".to_string(), "Space".to_string());        // B/Circle - Jump
-        buttons.insert("west".to_string(), "E".to_string());            // X/Square - Inventory
-        buttons.insert("north".to_string(), "F".to_string());           // Y/Triangle - Swap hands
+        buttons.insert("south".to_string(), "5".to_string()); // A/Cross - Hotbar 5
+        buttons.insert("east".to_string(), "Space".to_string()); // B/Circle - Jump
+        buttons.insert("west".to_string(), "E".to_string()); // X/Square - Inventory
+        buttons.insert("north".to_string(), "F".to_string()); // Y/Triangle - Swap hands
         buttons.insert("left_trigger".to_string(), "LeftClick".to_string());
         buttons.insert("right_trigger".to_string(), "RightClick".to_string());
-        buttons.insert("left_bumper".to_string(), "ScrollDown".to_string());  // LB - next hotbar slot
-        buttons.insert("right_bumper".to_string(), "ScrollUp".to_string());   // RB - prev hotbar slot
+        buttons.insert("left_bumper".to_string(), "ScrollDown".to_string()); // LB - next hotbar slot
+        buttons.insert("right_bumper".to_string(), "ScrollUp".to_string()); // RB - prev hotbar slot
         buttons.insert("start".to_string(), "Escape".to_string());
         buttons.insert("select".to_string(), "Tab".to_string());
         buttons.insert("left_thumb".to_string(), "Control".to_string()); // L3 - Sprint
         buttons.insert("right_thumb".to_string(), "Shift".to_string()); // R3 - Sneak
         buttons.insert("dpad_up".to_string(), "1".to_string());
-        buttons.insert("dpad_down".to_string(), "Q".to_string());         // D-pad down - Drop
+        buttons.insert("dpad_down".to_string(), "Q".to_string()); // D-pad down - Drop
         buttons.insert("dpad_left".to_string(), "2".to_string());
         buttons.insert("dpad_right".to_string(), "3".to_string());
 
@@ -87,19 +91,27 @@ impl Default for Config {
 impl Config {
     pub fn config_path() -> PathBuf {
         let config_dir = dirs_config_dir().unwrap_or_else(|| PathBuf::from("."));
-        config_dir.join("minecraft-input").join("config.toml")
+        config_dir.join("controller-input").join("config.toml")
     }
 
     pub fn load() -> Self {
-        let path = Self::config_path();
-        if path.exists() {
+        let config_dir = dirs_config_dir().unwrap_or_else(|| PathBuf::from("."));
+        Self::load_from_directory(&config_dir)
+    }
+
+    fn load_from_directory(config_dir: &Path) -> Self {
+        // Read pre-rename settings only until a new settings file is saved.
+        for directory in ["controller-input", "minecraft-input"] {
+            let path = config_dir.join(directory).join("config.toml");
             match fs::read_to_string(&path) {
                 Ok(content) => match toml::from_str(&content) {
                     Ok(config) => return config,
-                    Err(e) => log::warn!("Failed to parse config: {}", e),
+                    Err(e) => log::warn!("Failed to parse config {}: {}", path.display(), e),
                 },
-                Err(e) => log::warn!("Failed to read config: {}", e),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(e) => log::warn!("Failed to read config {}: {}", path.display(), e),
             }
+            break;
         }
         Config::default()
     }
@@ -131,6 +143,10 @@ fn dirs_config_dir() -> Option<PathBuf> {
         std::env::var("XDG_CONFIG_HOME")
             .ok()
             .map(PathBuf::from)
-            .or_else(|| std::env::var("HOME").ok().map(|h| PathBuf::from(h).join(".config")))
+            .or_else(|| {
+                std::env::var("HOME")
+                    .ok()
+                    .map(|h| PathBuf::from(h).join(".config"))
+            })
     }
 }
