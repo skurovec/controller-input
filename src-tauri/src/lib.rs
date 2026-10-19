@@ -34,7 +34,6 @@ pub fn run() {
     log::info!("Building Tauri app...");
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
         .manage(Arc::clone(&app_state))
         .invoke_handler(tauri::generate_handler![
             commands::get_status,
