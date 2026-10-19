@@ -3,8 +3,9 @@ name = "controller-input"
 version = "0.1.0"
 edition = "2021"
 description = "Controller to keyboard/mouse mapper"
-authors = ["You"]
+authors = ["Jan Skurovec"]
 license = "MIT"
+repository = "https://github.com/skurovec/controller-input"
 
 [lib]
 name = "controller_input_lib"

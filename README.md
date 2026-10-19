@@ -6,9 +6,9 @@ A Tauri desktop application that maps controller/gamepad inputs to keyboard and 
 
 - Maps controller buttons to keyboard keys
 - Maps analog sticks to WASD movement and mouse look
-- System tray integration
 - Configurable sensitivity and deadzone settings
 - Cross-platform (Windows, macOS)
+- Closing the window quits the app and releases any held keys and mouse buttons
 
 ## Default Controller Mapping
 
@@ -16,11 +16,12 @@ A Tauri desktop application that maps controller/gamepad inputs to keyboard and 
 |-----------------|--------|
 | Left Stick | WASD (movement) |
 | Right Stick | Mouse movement (camera) |
-| A / Cross | Space (jump) |
+| A / Cross | 5 (hotbar) |
+| B / Circle | Space (jump) |
 | X / Square | E (inventory) |
 | Y / Triangle | F (swap hands) |
-| LB / L1 | Next hotbar slot |
-| RB / R1 | Prev hotbar slot |
+| LB / L1 | Scroll down (next hotbar slot) |
+| RB / R1 | Scroll up (previous hotbar slot) |
 | LT / L2 | Left click (attack/mine) |
 | RT / R2 | Right click (use/place) |
 | D-Pad Up | 1 (hotbar) |
@@ -31,6 +32,21 @@ A Tauri desktop application that maps controller/gamepad inputs to keyboard and 
 | Select/Back | Tab (player list) |
 | L3 (Left Stick Click) | Ctrl (sprint) |
 | R3 (Right Stick Click) | Shift (sneak) |
+
+## Installation
+
+Download the latest build from the
+[releases page](https://github.com/skurovec/controller-input/releases):
+
+- **macOS**: `.dmg` (universal, Apple Silicon and Intel)
+- **Windows**: `.msi` or `-setup.exe` (XInput backend, see below)
+
+Release builds are not code-signed. On first launch:
+
+- **macOS**: open the app, close the warning, then go to System Settings ->
+  Privacy & Security and click **Open Anyway**.
+- **Windows**: if SmartScreen blocks the installer, click **More info** ->
+  **Run anyway**.
 
 ## Development
 
@@ -76,14 +92,23 @@ and configure a compatible linker. Distribute `WebView2Loader.dll` alongside the
 executable. Both variants require the WebView2 Runtime and use the same saved
 configuration. Close one variant completely before starting the other.
 
+### Releasing
+
+Bump the version in `package.json`, `src-tauri/Cargo.toml` and
+`src-tauri/tauri.conf.json`, then push a `v<version>` tag. The release
+workflow builds the macOS and Windows bundles and attaches them to a draft
+GitHub release for review.
+
 ### macOS Permissions
 
 On macOS, you need to grant Accessibility permissions for the app to simulate keyboard/mouse input:
 
-1. Open System Preferences -> Security & Privacy -> Privacy -> Accessibility
+1. Open System Settings -> Privacy & Security -> Accessibility
 2. Add the Controller Input app to the list
 
-After upgrading from the old app name, grant Accessibility permission to Controller Input again.
+Builds made before the app identifier changed to `cz.skurovec.controller-input`
+are treated as a different app. After upgrading from such a build, remove the
+old entry and grant Accessibility permission to Controller Input again.
 
 ## Configuration
 
@@ -130,4 +155,10 @@ right_stick_y = { type = "mouse_y", sensitivity = 2.5 }
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+## Trademarks
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG
+OR MICROSOFT. Minecraft, Xbox, PlayStation and DualSense are trademarks of
+their respective owners and are used only to describe compatibility.
