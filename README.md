@@ -3,8 +3,9 @@
 A Tauri desktop application that maps controller/gamepad inputs to keyboard and mouse. The default mappings target Minecraft Java Edition.
 
 <p align="center">
-  <img src="docs/screenshots/settings.png" alt="Controller status, start button, and sensitivity settings" width="45%">
-  <img src="docs/screenshots/button-mapping.png" alt="Button mapping with a key or mouse action for each controller button" width="45%">
+  <img src="docs/screenshots/play.png" alt="Play tab: step 2 of 3, the controller is ready and a big green Start button" width="32%">
+  <img src="docs/screenshots/buttons.png" alt="Buttons tab: a controller drawing beside the list of buttons, each with its game action and key" width="32%">
+  <img src="docs/screenshots/playing.png" alt="Play tab: step 3 of 3, switch to your game, with a red Stop button" width="32%">
 </p>
 
 ## Why
@@ -15,13 +16,17 @@ installing mods or running the game through Steam Input with a Steam account.
 
 Controller Input is a small standalone app instead. It turns gamepad input into
 the keyboard and mouse events the game already understands, so the game itself
-stays untouched. Start it, press **Start Mapping**, and play.
+stays untouched. Start it, follow the three numbered steps, and play. The
+window is made for a child to use alone: big pictures, few words, and one
+button to press at each step.
 
 ## Features
 
-- Maps controller buttons to keyboard keys
+- Three-step play screen: turn on the controller, press Start, switch to the game
+- Shows what each button does in the game, with its key, and lets you change it
 - Maps analog sticks to WASD movement and mouse look
-- Configurable sensitivity and deadzone settings
+- Look speed, stick push and wobble settings for grown-ups
+- English and Czech, following the system language
 - Cross-platform (Windows, macOS)
 - Closing the window quits the app and releases any held keys and mouse buttons
 
