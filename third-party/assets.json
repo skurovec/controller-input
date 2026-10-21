@@ -1,0 +1,11 @@
+[
+    {
+        "name": "Atkinson Hyperlegible Next",
+        "source": "https://github.com/googlefonts/atkinson-hyperlegible-next",
+        "files": [
+            "src/fonts/atkinson-hyperlegible-next-latin.woff2",
+            "src/fonts/atkinson-hyperlegible-next-latin-ext.woff2"
+        ],
+        "license": "src/fonts/OFL.txt"
+    }
+]

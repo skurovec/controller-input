@@ -172,10 +172,16 @@ right_stick_y = { type = "mouse_y", sensitivity = 2.5 }
 
 [MIT](LICENSE)
 
+The bundled [Atkinson Hyperlegible Next](https://github.com/googlefonts/atkinson-hyperlegible-next)
+font is licensed under the SIL Open Font License 1.1
+([`src/fonts/OFL.txt`](src/fonts/OFL.txt)).
+
 Release bundles include `LICENSE` and
 [`THIRD_PARTY_LICENSES.txt`](THIRD_PARTY_LICENSES.txt), the license and
-copyright notices of every bundled Rust crate. After changing dependencies,
-regenerate the file and commit it. CI fails when it is out of date.
+copyright notices of every bundled Rust crate and of the other bundled assets
+listed in `third-party/assets.json`, such as the font. After changing
+dependencies or bundled assets, regenerate the file and commit it. CI fails
+when it is out of date.
 
 ```bash
 node scripts/third-party-licenses.mjs
@@ -184,6 +190,8 @@ node scripts/third-party-licenses.mjs
 The script copies license files verbatim from each crate. When a crate
 publishes none, it uses the upstream copy mapped in
 `third-party/overrides.json`, and it fails for crates that have neither.
+Asset notices come from the license file named for each asset in
+`third-party/assets.json`; the script fails when a listed file is missing.
 
 ## Trademarks
 
