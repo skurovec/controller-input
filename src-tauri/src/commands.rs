@@ -70,6 +70,13 @@ pub fn get_config(state: State<Arc<AppState>>) -> Config {
     state.config.lock().clone()
 }
 
+/// Returns the built-in mapping, so the UI can tell which buttons still carry
+/// their default game action.
+#[tauri::command]
+pub fn get_default_config() -> Config {
+    Config::default()
+}
+
 #[tauri::command]
 pub fn update_config(state: State<Arc<AppState>>, config: Config) -> Result<(), String> {
     let mut current = state.config.lock();

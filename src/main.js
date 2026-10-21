@@ -1,305 +1,548 @@
+import { t, maybeT, translateDocument } from './i18n.js';
+
 const { invoke } = window.__TAURI__.core;
 
-// DOM Elements
-const controllerIndicator = document.getElementById('controllerIndicator');
-const controllerStatus = document.getElementById('controllerStatus');
-const mappingIndicator = document.getElementById('mappingIndicator');
-const mappingStatus = document.getElementById('mappingStatus');
-const toggleBtn = document.getElementById('toggleBtn');
-const deadzoneSlider = document.getElementById('deadzone');
-const deadzoneValue = document.getElementById('deadzoneValue');
-const sensitivitySlider = document.getElementById('sensitivity');
-const sensitivityValue = document.getElementById('sensitivityValue');
-const thresholdSlider = document.getElementById('threshold');
-const thresholdValue = document.getElementById('thresholdValue');
-const resetBtn = document.getElementById('resetBtn');
-const buttonMappingsGrid = document.getElementById('buttonMappingsGrid');
+const STATUS_POLL_MS = 500;
+const NOTICE_MS = 6000;
+const RESET_CONFIRM_MS = 4000;
 
-const BUTTON_LABELS = [
-    { key: 'south', label: 'A / Cross' },
-    { key: 'east', label: 'B / Circle' },
-    { key: 'west', label: 'X / Square' },
-    { key: 'north', label: 'Y / Triangle' },
-    { key: 'left_bumper', label: 'LB / L1' },
-    { key: 'right_bumper', label: 'RB / R1' },
-    { key: 'left_trigger', label: 'LT / L2' },
-    { key: 'right_trigger', label: 'RT / R2' },
-    { key: 'start', label: 'Start' },
-    { key: 'select', label: 'Select / Back' },
-    { key: 'left_thumb', label: 'L3 (Left Click)' },
-    { key: 'right_thumb', label: 'R3 (Right Click)' },
-    { key: 'dpad_up', label: 'D-Pad Up' },
-    { key: 'dpad_down', label: 'D-Pad Down' },
-    { key: 'dpad_left', label: 'D-Pad Left' },
-    { key: 'dpad_right', label: 'D-Pad Right' }
+// Magnifier crops into the controller drawing (viewBox units), one per region.
+const CROPS = {
+    face: { x: 230, y: 82, size: 74 },
+    pad: { x: 124, y: 128, size: 74 },
+    leftShoulder: { x: 92, y: 44, size: 112 },
+    rightShoulder: { x: 228, y: 44, size: 112 },
+    leftStick: { x: 90, y: 82, size: 66 },
+    rightStick: { x: 196, y: 128, size: 62 },
+    middle: { x: 160, y: 76, size: 78 }
+};
+
+// Rows of the Buttons page, grouped by controller region.
+const BUTTONS = [
+    { key: 'right_trigger', crop: 'rightShoulder' },
+    { key: 'left_trigger', crop: 'leftShoulder' },
+    { key: 'right_bumper', crop: 'rightShoulder' },
+    { key: 'left_bumper', crop: 'leftShoulder' },
+    { key: 'south', crop: 'face' },
+    { key: 'east', crop: 'face' },
+    { key: 'west', crop: 'face' },
+    { key: 'north', crop: 'face' },
+    { key: 'left_thumb', crop: 'leftStick' },
+    { key: 'right_thumb', crop: 'rightStick' },
+    { key: 'dpad_up', crop: 'pad' },
+    { key: 'dpad_down', crop: 'pad' },
+    { key: 'dpad_left', crop: 'pad' },
+    { key: 'dpad_right', crop: 'pad' },
+    { key: 'start', crop: 'middle' },
+    { key: 'select', crop: 'middle' }
 ];
 
-const ACTION_OPTIONS = [
-    { group: null, options: [{ value: '', label: 'None' }] },
-    {
-        group: 'Keyboard',
-        options: [
-            { value: 'Space', label: 'Space' },
-            { value: 'Escape', label: 'Escape' },
-            { value: 'Tab', label: 'Tab' },
-            { value: 'Enter', label: 'Enter' },
-            { value: 'Backspace', label: 'Backspace' },
-            { value: 'Shift', label: 'Shift' },
-            { value: 'Control', label: 'Ctrl' },
-            { value: 'Alt', label: 'Alt' }
-        ]
-    },
-    {
-        group: 'Letters',
-        options: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letter) => ({
-            value: letter,
-            label: letter
-        }))
-    },
-    {
-        group: 'Numbers',
-        options: '0123456789'.split('').map((digit) => ({ value: digit, label: digit }))
-    },
-    {
-        group: 'Function',
-        options: Array.from({ length: 12 }, (_, index) => {
-            const name = `F${index + 1}`;
-            return { value: name, label: name };
-        })
-    },
-    {
-        group: 'Arrows',
-        options: [
-            { value: 'Up', label: 'Up' },
-            { value: 'Down', label: 'Down' },
-            { value: 'Left', label: 'Left' },
-            { value: 'Right', label: 'Right' }
-        ]
-    },
-    {
-        group: 'Mouse',
-        options: [
-            { value: 'LeftClick', label: 'Left Click' },
-            { value: 'RightClick', label: 'Right Click' },
-            { value: 'MiddleClick', label: 'Middle Click' }
-        ]
-    },
-    {
-        group: 'Scroll',
-        options: [
-            { value: 'ScrollUp', label: 'Scroll Up' },
-            { value: 'ScrollDown', label: 'Scroll Down' }
-        ]
-    }
+const KEY_GROUPS = [
+    { label: 'group.keyboard', values: ['Space', 'Escape', 'Tab', 'Enter', 'Backspace', 'Shift', 'Control', 'Alt'] },
+    { label: 'group.letters', values: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('') },
+    { label: 'group.numbers', values: '0123456789'.split('') },
+    { label: 'group.function', values: Array.from({ length: 12 }, (_, index) => `F${index + 1}`) },
+    { label: 'group.arrows', values: ['Up', 'Down', 'Left', 'Right'] },
+    { label: 'group.mouse', values: ['LeftClick', 'RightClick', 'MiddleClick'] },
+    { label: 'group.scroll', values: ['ScrollUp', 'ScrollDown'] }
 ];
 
-const ALL_ACTION_VALUES = new Set(
-    ACTION_OPTIONS.flatMap((group) => group.options.map((option) => option.value))
-);
+const KNOWN_KEYS = new Set(KEY_GROUPS.flatMap((group) => group.values));
+const MOUSE_KEYS = new Set(['LeftClick', 'RightClick', 'MiddleClick', 'ScrollUp', 'ScrollDown']);
 
-// State
-let isRunning = false;
-let controllerConnected = false;
-
-// Initialize
-const init = async () => {
-    await loadConfig();
-    await updateStatus();
-
-    // Poll status every 500ms
-    setInterval(updateStatus, 500);
-};
-
-// Load config from backend
-const loadConfig = async () => {
-    try {
-        const config = await invoke('get_config');
-        applyConfigToUI(config);
-    } catch (e) {
-        console.error('Failed to load config:', e);
-        alert('Failed to load configuration. See console for details.');
+const elements = {
+    tabs: [...document.querySelectorAll('.tab')],
+    pages: [...document.querySelectorAll('.page')],
+    sheet: document.getElementById('sheet'),
+    stage: document.getElementById('stage'),
+    panels: [...document.querySelectorAll('.stage__panel')],
+    chips: [...document.querySelectorAll('.step-chip')],
+    deviceName: document.getElementById('deviceName'),
+    startButton: document.getElementById('startButton'),
+    stopButton: document.getElementById('stopButton'),
+    diagram: document.getElementById('diagram'),
+    partsList: document.getElementById('partsList'),
+    resetButton: document.getElementById('resetButton'),
+    resetLabel: document.getElementById('resetLabel'),
+    notice: document.getElementById('notice'),
+    sliders: {
+        sensitivity: document.getElementById('sensitivity'),
+        threshold: document.getElementById('threshold'),
+        deadzone: document.getElementById('deadzone')
+    },
+    sliderValues: {
+        sensitivity: document.getElementById('sensitivityValue'),
+        threshold: document.getElementById('thresholdValue'),
+        deadzone: document.getElementById('deadzoneValue')
     }
 };
 
-const applyConfigToUI = (config) => {
-    deadzoneSlider.value = config.settings.deadzone;
-    deadzoneValue.textContent = config.settings.deadzone.toFixed(2);
-    sensitivitySlider.value = config.settings.mouse_sensitivity;
-    sensitivityValue.textContent = config.settings.mouse_sensitivity.toFixed(1);
-    thresholdSlider.value = config.settings.stick_to_key_threshold;
-    thresholdValue.textContent = config.settings.stick_to_key_threshold.toFixed(2);
-    renderButtonMappings(config.buttons || {});
+const state = {
+    step: 0,
+    defaults: { buttons: {} },
+    statusFailing: false,
+    busy: false
 };
 
-const buildActionSelect = (buttonKey, currentValue) => {
-    const select = document.createElement('select');
-    select.className = 'mapping-select';
-    select.dataset.button = buttonKey;
+// ---------------------------------------------------------------- notices
 
-    for (const group of ACTION_OPTIONS) {
-        const parent = group.group
-            ? (() => {
-                  const optgroup = document.createElement('optgroup');
-                  optgroup.label = group.group;
-                  return optgroup;
-              })()
-            : select;
+let noticeTimer;
 
-        for (const opt of group.options) {
-            const optionElement = document.createElement('option');
-            optionElement.value = opt.value;
-            optionElement.textContent = opt.label;
-            parent.appendChild(optionElement);
-        }
-        if (group.group) {
-            select.appendChild(parent);
-        }
+const showNotice = (message, tone = 'error') => {
+    clearTimeout(noticeTimer);
+    elements.notice.textContent = message;
+    elements.notice.dataset.tone = tone;
+    elements.notice.classList.add('is-visible');
+    noticeTimer = setTimeout(() => elements.notice.classList.remove('is-visible'), NOTICE_MS);
+};
+
+const reportError = (messageKey, error) => {
+    console.error(`${messageKey}:`, error);
+    showNotice(t(messageKey));
+};
+
+// ---------------------------------------------------------------- controller art
+
+const controllerTemplate = document.getElementById('controllerTemplate');
+
+const createController = () => controllerTemplate.content.firstElementChild.cloneNode(true);
+
+const createMagnifier = (buttonKey, cropName) => {
+    const crop = CROPS[cropName];
+    const svg = createController();
+    const half = crop.size / 2;
+    svg.setAttribute('viewBox', `${crop.x - half} ${crop.y - half} ${crop.size} ${crop.size}`);
+    svg.querySelector(`[data-button="${buttonKey}"]`)?.classList.add('is-lit');
+
+    const magnifier = document.createElement('span');
+    magnifier.className = 'magnifier';
+    magnifier.append(svg);
+    return magnifier;
+};
+
+for (const slot of document.querySelectorAll('[data-art="controller"]')) {
+    slot.prepend(createController());
+}
+
+// ---------------------------------------------------------------- tabs
+
+const selectTab = (tab, { focus = false } = {}) => {
+    for (const other of elements.tabs) {
+        const selected = other === tab;
+        other.setAttribute('aria-selected', String(selected));
+        other.tabIndex = selected ? 0 : -1;
     }
-
-    const normalized = currentValue == null ? '' : currentValue;
-    if (normalized !== '' && !ALL_ACTION_VALUES.has(normalized)) {
-        // Unknown value coming from config — show it so user can see what is set
-        const customOption = document.createElement('option');
-        customOption.value = normalized;
-        customOption.textContent = `${normalized} (custom)`;
-        select.insertBefore(customOption, select.firstChild);
+    for (const page of elements.pages) {
+        page.hidden = page.id !== tab.getAttribute('aria-controls');
     }
-    select.value = normalized;
+    document.body.dataset.page = tab.dataset.page;
+    elements.sheet.scrollTop = 0;
+    if (focus) {
+        tab.focus();
+    }
+};
 
-    select.addEventListener('change', async () => {
-        try {
-            await invoke('update_button_mapping', {
-                button: buttonKey,
-                action: select.value === '' ? null : select.value
-            });
-        } catch (e) {
-            console.error('Failed to update button mapping:', e);
-            alert(`Failed to update mapping for ${buttonKey}: ${e}`);
+for (const tab of elements.tabs) {
+    tab.addEventListener('click', () => selectTab(tab));
+    tab.addEventListener('keydown', (event) => {
+        const index = elements.tabs.indexOf(tab);
+        const last = elements.tabs.length - 1;
+        const target = {
+            ArrowRight: elements.tabs[index === last ? 0 : index + 1],
+            ArrowLeft: elements.tabs[index === 0 ? last : index - 1],
+            Home: elements.tabs[0],
+            End: elements.tabs[last]
+        }[event.key];
+        if (target) {
+            event.preventDefault();
+            selectTab(target, { focus: true });
         }
     });
+}
 
+// ---------------------------------------------------------------- play steps
+
+const stepFor = (status) => {
+    if (!status.controller_connected) {
+        return 1;
+    }
+    return status.is_running ? 3 : 2;
+};
+
+const renderStep = (step) => {
+    if (step === state.step) {
+        return;
+    }
+    const firstRender = state.step === 0;
+    state.step = step;
+    elements.stage.dataset.step = String(step);
+    elements.stage.classList.toggle('is-settled', firstRender);
+
+    for (const panel of elements.panels) {
+        const active = Number(panel.dataset.panel) === step;
+        panel.classList.toggle('is-active', active);
+        panel.inert = !active;
+    }
+    for (const chip of elements.chips) {
+        const chipStep = Number(chip.dataset.step);
+        chip.classList.toggle('is-done', chipStep < step);
+        chip.classList.toggle('is-current', chipStep === step);
+        chip.querySelector('.step-chip__state').textContent =
+            chipStep < step ? t('step.done') : chipStep === step ? t('step.current') : '';
+        if (chipStep === step) {
+            chip.setAttribute('aria-current', 'step');
+        } else {
+            chip.removeAttribute('aria-current');
+        }
+    }
+};
+
+const applyStatus = (status) => {
+    elements.deviceName.textContent = status.controller_name || t('step2.unnamed');
+    renderStep(stepFor(status));
+};
+
+const updateStatus = async () => {
+    try {
+        applyStatus(await invoke('get_status'));
+        if (state.statusFailing) {
+            state.statusFailing = false;
+            elements.notice.classList.remove('is-visible');
+        }
+    } catch (error) {
+        if (!state.statusFailing) {
+            state.statusFailing = true;
+            reportError('error.status', error);
+        }
+    }
+};
+
+const runMappingCommand = async (button, command) => {
+    if (state.busy) {
+        return;
+    }
+    state.busy = true;
+    button.setAttribute('aria-busy', 'true');
+    try {
+        await invoke(command);
+        applyStatus(await invoke('get_status'));
+    } catch (error) {
+        reportError('error.toggle', error);
+    } finally {
+        state.busy = false;
+        button.removeAttribute('aria-busy');
+    }
+};
+
+elements.startButton.addEventListener('click', () => runMappingCommand(elements.startButton, 'start_mapping'));
+elements.stopButton.addEventListener('click', () => runMappingCommand(elements.stopButton, 'stop_mapping'));
+
+// ---------------------------------------------------------------- buttons page
+
+const keyLabel = (value) => {
+    if (!value) {
+        return t('key.none');
+    }
+    return maybeT(`key.${value}`) ?? value;
+};
+
+const createKeySelect = (buttonKey, currentValue) => {
+    const select = document.createElement('select');
+    select.className = 'keycap__select';
+    select.setAttribute('aria-label', t('buttons.changeLabel', { button: t(`button.${buttonKey}`) }));
+
+    const none = new Option(t('key.none'), '');
+    select.append(none);
+
+    if (currentValue && !KNOWN_KEYS.has(currentValue)) {
+        // Keep values written by hand into config.toml visible and selectable.
+        select.append(new Option(t('key.custom', { key: currentValue }), currentValue));
+    }
+
+    for (const group of KEY_GROUPS) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = t(group.label);
+        for (const value of group.values) {
+            optgroup.append(new Option(keyLabel(value), value));
+        }
+        select.append(optgroup);
+    }
+
+    select.value = currentValue ?? '';
     return select;
 };
 
-const renderButtonMappings = (buttonsMap) => {
-    buttonMappingsGrid.innerHTML = '';
-    for (const { key, label } of BUTTON_LABELS) {
-        const row = document.createElement('div');
-        row.className = 'button-mapping-row';
+const renderPartText = (row, buttonKey, value) => {
+    const isDefault = value != null && value === state.defaults.buttons[buttonKey];
+    const action = row.querySelector('.part-row__action');
+    const name = row.querySelector('.part-row__name');
+    action.textContent = isDefault ? t(`action.${buttonKey}`) : t(`button.${buttonKey}`);
+    name.textContent = isDefault ? t(`button.${buttonKey}`) : '';
 
-        const labelEl = document.createElement('span');
-        labelEl.className = 'mapping-input';
-        labelEl.textContent = label;
+    const keycap = row.querySelector('.keycap');
+    keycap.querySelector('.keycap__label').textContent = keyLabel(value);
+    keycap.classList.toggle('keycap--mouse', MOUSE_KEYS.has(value));
+    keycap.classList.toggle('keycap--empty', !value);
+};
 
-        const arrow = document.createElement('span');
-        arrow.className = 'mapping-arrow';
-        arrow.textContent = '→';
+const createMouseIcon = () => {
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.classList.add('keycap__mouse');
+    const body = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    for (const [name, value] of Object.entries({ x: 6, y: 3, width: 12, height: 18, rx: 6 })) {
+        body.setAttribute(name, String(value));
+    }
+    const divider = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    divider.setAttribute('d', 'M12 3v7M6 10h12');
+    icon.append(body, divider);
+    return icon;
+};
 
-        const select = buildActionSelect(key, buttonsMap[key]);
+const createPartRow = (buttonKey, cropName, value) => {
+    const row = document.createElement('li');
+    row.className = 'part-row';
+    row.dataset.button = buttonKey;
 
-        row.appendChild(labelEl);
-        row.appendChild(arrow);
-        row.appendChild(select);
-        buttonMappingsGrid.appendChild(row);
+    const text = document.createElement('span');
+    text.className = 'part-row__text';
+    const action = document.createElement('span');
+    action.className = 'part-row__action';
+    const name = document.createElement('span');
+    name.className = 'part-row__name';
+    text.append(action, name);
+
+    const keycap = document.createElement('label');
+    keycap.className = 'keycap';
+    const label = document.createElement('span');
+    label.className = 'keycap__label';
+    const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    chevron.setAttribute('viewBox', '0 0 24 24');
+    chevron.setAttribute('aria-hidden', 'true');
+    chevron.classList.add('keycap__chevron');
+    const chevronPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    chevronPath.setAttribute('d', 'M7 10l5 5 5-5');
+    chevron.append(chevronPath);
+
+    const select = createKeySelect(buttonKey, value);
+    keycap.append(createMouseIcon(), label, chevron, select);
+
+    select.addEventListener('change', async () => {
+        const nextValue = select.value;
+        renderPartText(row, buttonKey, nextValue);
+        try {
+            await invoke('update_button_mapping', {
+                button: buttonKey,
+                action: nextValue === '' ? null : nextValue
+            });
+        } catch (error) {
+            reportError('error.save', error);
+            // A failed save may still have changed the live mapping, so show
+            // what the backend actually holds rather than the previous value.
+            try {
+                const config = await invoke('get_config');
+                const activeValue = config.buttons?.[buttonKey] ?? '';
+                select.value = activeValue;
+                renderPartText(row, buttonKey, activeValue);
+            } catch (reloadError) {
+                reportError('error.load', reloadError);
+            }
+        }
+    });
+
+    row.append(createMagnifier(buttonKey, cropName), text, keycap);
+    renderPartText(row, buttonKey, value);
+    return row;
+};
+
+const createStickRow = (stickName, cropName, actionKey, keys) => {
+    const row = document.createElement('li');
+    row.className = 'part-row part-row--fixed';
+    row.dataset.button = stickName;
+
+    const text = document.createElement('span');
+    text.className = 'part-row__text';
+    const action = document.createElement('span');
+    action.className = 'part-row__action';
+    action.textContent = t(actionKey);
+    const name = document.createElement('span');
+    name.className = 'part-row__name';
+    name.textContent = t(`stick.${stickName === 'left_stick' ? 'left' : 'right'}`);
+    text.append(action, name);
+
+    const cluster = document.createElement('span');
+    cluster.className = 'keycap-cluster';
+    for (const key of keys) {
+        const cap = document.createElement('span');
+        cap.className = 'keycap keycap--fixed';
+        if (key === 'mouse') {
+            cap.classList.add('keycap--mouse');
+            const label = document.createElement('span');
+            label.className = 'keycap__label';
+            label.textContent = t('stick.mouse');
+            cap.append(createMouseIcon(), label);
+        } else {
+            cap.textContent = key;
+        }
+        cluster.append(cap);
+    }
+
+    const stickButton = stickName === 'left_stick' ? 'left_thumb' : 'right_thumb';
+    row.append(createMagnifier(stickButton, cropName), text, cluster);
+    return row;
+};
+
+const renderParts = (buttons) => {
+    elements.partsList.replaceChildren(
+        createStickRow('left_stick', 'leftStick', 'stick.walk', ['W', 'A', 'S', 'D']),
+        createStickRow('right_stick', 'rightStick', 'stick.look', ['mouse']),
+        ...BUTTONS.map(({ key, crop }) => createPartRow(key, crop, buttons[key]))
+    );
+};
+
+// Diagram and rows point at each other: hovering either lights both.
+const diagramButtonFor = (rowButton) => {
+    const target = { left_stick: 'left_thumb', right_stick: 'right_thumb' }[rowButton] ?? rowButton;
+    return elements.diagram.querySelector(`[data-button="${target}"]`);
+};
+
+const setPointed = (rowButton, pointed) => {
+    diagramButtonFor(rowButton)?.classList.toggle('is-lit', pointed);
+    elements.partsList
+        .querySelector(`.part-row[data-button="${rowButton}"]`)
+        ?.classList.toggle('is-pointed', pointed);
+};
+
+for (const eventName of ['pointerover', 'focusin']) {
+    elements.partsList.addEventListener(eventName, (event) => {
+        const row = event.target.closest('.part-row');
+        if (row) {
+            setPointed(row.dataset.button, true);
+        }
+    });
+}
+for (const eventName of ['pointerout', 'focusout']) {
+    elements.partsList.addEventListener(eventName, (event) => {
+        const row = event.target.closest('.part-row');
+        if (row && !row.contains(event.relatedTarget)) {
+            setPointed(row.dataset.button, false);
+        }
+    });
+}
+
+elements.diagram.addEventListener('pointerover', (event) => {
+    const part = event.target.closest('[data-button]');
+    if (part) {
+        setPointed(part.dataset.button, true);
+    }
+});
+elements.diagram.addEventListener('pointerout', (event) => {
+    const part = event.target.closest('[data-button]');
+    if (part) {
+        setPointed(part.dataset.button, false);
+    }
+});
+elements.diagram.addEventListener('click', (event) => {
+    const part = event.target.closest('[data-button]');
+    const row = part && elements.partsList.querySelector(`.part-row[data-button="${part.dataset.button}"]`);
+    if (row) {
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        row.querySelector('select')?.focus({ preventScroll: true });
+    }
+});
+
+// ---------------------------------------------------------------- fine-tune
+
+const SLIDER_DIGITS = { sensitivity: 1, threshold: 2, deadzone: 2 };
+
+const showSliderValue = (name) => {
+    const value = Number.parseFloat(elements.sliders[name].value);
+    elements.sliderValues[name].textContent = value.toFixed(SLIDER_DIGITS[name]);
+};
+
+let saveTimer;
+
+const saveSettings = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+        try {
+            await invoke('update_settings', {
+                deadzone: Number.parseFloat(elements.sliders.deadzone.value),
+                mouseSensitivity: Number.parseFloat(elements.sliders.sensitivity.value),
+                stickToKeyThreshold: Number.parseFloat(elements.sliders.threshold.value)
+            });
+        } catch (error) {
+            reportError('error.save', error);
+        }
+    }, 300);
+};
+
+for (const name of Object.keys(elements.sliders)) {
+    elements.sliders[name].addEventListener('input', () => {
+        showSliderValue(name);
+        saveSettings();
+    });
+}
+
+let resetArmedTimer;
+
+const disarmReset = () => {
+    clearTimeout(resetArmedTimer);
+    elements.resetButton.classList.remove('is-armed');
+    elements.resetLabel.textContent = t('tune.reset');
+};
+
+elements.resetButton.addEventListener('click', async () => {
+    if (!elements.resetButton.classList.contains('is-armed')) {
+        elements.resetButton.classList.add('is-armed');
+        elements.resetLabel.textContent = t('tune.resetConfirm');
+        resetArmedTimer = setTimeout(disarmReset, RESET_CONFIRM_MS);
+        return;
+    }
+    disarmReset();
+    try {
+        applyConfig(await invoke('reset_config'));
+        showNotice(t('tune.resetDone'), 'success');
+    } catch (error) {
+        reportError('error.reset', error);
+    }
+});
+
+// ---------------------------------------------------------------- config
+
+const applyConfig = (config) => {
+    elements.sliders.deadzone.value = config.settings.deadzone;
+    elements.sliders.sensitivity.value = config.settings.mouse_sensitivity;
+    elements.sliders.threshold.value = config.settings.stick_to_key_threshold;
+    for (const name of Object.keys(elements.sliders)) {
+        showSliderValue(name);
+    }
+    renderParts(config.buttons ?? {});
+};
+
+const loadConfig = async () => {
+    try {
+        const [config, defaults] = await Promise.all([invoke('get_config'), invoke('get_default_config')]);
+        state.defaults = defaults;
+        applyConfig(config);
+    } catch (error) {
+        renderParts({});
+        reportError('error.load', error);
     }
 };
 
-// Update status from backend
-const updateStatus = async () => {
-    try {
-        const status = await invoke('get_status');
-        isRunning = status.is_running;
-        controllerConnected = status.controller_connected;
-        updateUI(status.controller_name);
-    } catch (e) {
-        console.error('Failed to get status:', e);
+// ---------------------------------------------------------------- start
+
+const init = async () => {
+    translateDocument();
+    selectTab(elements.tabs[0]);
+    await loadConfig();
+    await updateStatus();
+    if (state.step === 0) {
+        renderStep(1);
     }
+    setInterval(updateStatus, STATUS_POLL_MS);
 };
 
-// Update UI based on state
-const updateUI = (controllerName = null) => {
-    // Controller status
-    if (controllerConnected) {
-        controllerIndicator.classList.add('connected');
-        controllerStatus.textContent = controllerName || 'Connected';
-        toggleBtn.disabled = false;
-    } else {
-        controllerIndicator.classList.remove('connected');
-        controllerStatus.textContent = 'Not connected';
-        toggleBtn.disabled = true;
-    }
-
-    // Mapping status
-    if (isRunning) {
-        mappingIndicator.classList.add('active');
-        mappingStatus.textContent = 'Active';
-        toggleBtn.classList.add('active');
-        toggleBtn.querySelector('.btn-text').textContent = 'Stop Mapping';
-    } else {
-        mappingIndicator.classList.remove('active');
-        mappingStatus.textContent = 'Inactive';
-        toggleBtn.classList.remove('active');
-        toggleBtn.querySelector('.btn-text').textContent = 'Start Mapping';
-    }
-};
-
-// Event Listeners
-toggleBtn.addEventListener('click', async () => {
-    try {
-        const newState = await invoke('toggle_mapping');
-        isRunning = newState;
-        updateUI();
-    } catch (e) {
-        console.error('Failed to toggle mapping:', e);
-    }
-});
-
-// Debounce function for sliders
-const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-};
-
-// Save settings with debounce
-const saveSettings = debounce(async () => {
-    try {
-        await invoke('update_settings', {
-            deadzone: parseFloat(deadzoneSlider.value),
-            mouseSensitivity: parseFloat(sensitivitySlider.value),
-            stickToKeyThreshold: parseFloat(thresholdSlider.value)
-        });
-    } catch (e) {
-        console.error('Failed to save settings:', e);
-    }
-}, 300);
-
-deadzoneSlider.addEventListener('input', () => {
-    deadzoneValue.textContent = parseFloat(deadzoneSlider.value).toFixed(2);
-    saveSettings();
-});
-
-sensitivitySlider.addEventListener('input', () => {
-    sensitivityValue.textContent = parseFloat(sensitivitySlider.value).toFixed(1);
-    saveSettings();
-});
-
-thresholdSlider.addEventListener('input', () => {
-    thresholdValue.textContent = parseFloat(thresholdSlider.value).toFixed(2);
-    saveSettings();
-});
-
-resetBtn.addEventListener('click', async () => {
-    try {
-        const config = await invoke('reset_config');
-        applyConfigToUI(config);
-    } catch (e) {
-        console.error('Failed to reset config:', e);
-        alert('Failed to reset configuration. See console for details.');
-    }
-});
-
-// Start the app
 init();

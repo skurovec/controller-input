@@ -11,12 +11,12 @@
         "windows": [
             {
                 "title": "Controller Input",
-                "width": 600,
-                "height": 500,
+                "width": 760,
+                "height": 760,
                 "resizable": true,
                 "fullscreen": false,
-                "minWidth": 400,
-                "minHeight": 400
+                "minWidth": 460,
+                "minHeight": 560
             }
         ],
         "security": {

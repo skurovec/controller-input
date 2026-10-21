@@ -7,84 +7,204 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Controller Input</h1>
-            <p class="subtitle">Controller to Keyboard/Mouse Mapper</p>
-        </header>
-
-        <section class="status-section">
-            <div class="status-card">
-                <div class="status-indicator" id="controllerIndicator"></div>
-                <div class="status-info">
-                    <span class="status-label">Controller</span>
-                    <span class="status-value" id="controllerStatus">Checking...</span>
-                </div>
-            </div>
-
-            <div class="status-card">
-                <div class="status-indicator" id="mappingIndicator"></div>
-                <div class="status-info">
-                    <span class="status-label">Mapping</span>
-                    <span class="status-value" id="mappingStatus">Inactive</span>
-                </div>
-            </div>
-        </section>
-
-        <section class="controls-section">
-            <button class="toggle-btn" id="toggleBtn" disabled>
-                <span class="btn-text">Start Mapping</span>
+    <!--
+    THESIS: A wordless assembly booklet: big numbered steps take a kid from
+    "controller on" to "playing" on their own. Refuses the dark settings
+    utility with status pills, sliders and a dropdown list.
+    OWN-WORLD: Sky-blue booklet page, white callout boxes ruled in ink, chunky
+    toy-plastic parts, magnifier circles zooming into one controller button,
+    monumental step numerals. Saturated colour only on parts you can press;
+    each section tab owns one hue (Play green, Buttons yellow, Fine-tune orange).
+    STORY: The kid sees which step they are on, presses the one big part, and
+    goes to the game. A grown-up finds button keys and tuning behind the tabs.
+    FIRST VIEWPORT: Tab rail on top; step strip 1-2-3; one stage callout with
+    the current step's numeral top-left, the controller drawing in the middle,
+    and the step's single action (the green Start part) at full width.
+    FORM: Assembly Booklet, candidate 5 of 7, seed key 400d15fd.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <div class="booklet">
+        <nav class="tab-rail" role="tablist" data-i18n-aria-label="tabs.label">
+            <button class="tab tab--play" id="tab-play" role="tab" aria-controls="page-play" aria-selected="true" data-page="play">
+                <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>
+                <span data-i18n="tab.play">Play</span>
             </button>
-        </section>
+            <button class="tab tab--buttons" id="tab-buttons" role="tab" aria-controls="page-buttons" aria-selected="false" tabindex="-1" data-page="buttons">
+                <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="11" rx="5.5"/><path d="M7.5 10.5v4M5.5 12.5h4"/><circle cx="15.5" cy="11" r="1.2"/><circle cx="17.8" cy="13.6" r="1.2"/></svg>
+                <span data-i18n="tab.buttons">Buttons</span>
+            </button>
+            <button class="tab tab--tune" id="tab-tune" role="tab" aria-controls="page-tune" aria-selected="false" tabindex="-1" data-page="tune">
+                <svg class="tab__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="2.2"/><circle cx="15" cy="12" r="2.2"/><circle cx="11" cy="17" r="2.2"/></svg>
+                <span data-i18n="tab.tune">Fine-tune</span>
+            </button>
+        </nav>
 
-        <section class="settings-section">
-            <h2>Settings</h2>
+        <main class="sheet" id="sheet">
+            <section class="page page--play" id="page-play" role="tabpanel" aria-labelledby="tab-play">
+                <ol class="step-strip" data-i18n-aria-label="steps.label">
+                    <li class="step-chip" data-step="1">
+                        <span class="step-chip__number">1</span>
+                        <span class="step-chip__label" data-i18n="chip.controller">Controller</span>
+                        <svg class="step-chip__tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        <span class="visually-hidden step-chip__state"></span>
+                    </li>
+                    <li class="step-chip" data-step="2">
+                        <span class="step-chip__number">2</span>
+                        <span class="step-chip__label" data-i18n="chip.start">Start</span>
+                        <svg class="step-chip__tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        <span class="visually-hidden step-chip__state"></span>
+                    </li>
+                    <li class="step-chip" data-step="3">
+                        <span class="step-chip__number">3</span>
+                        <span class="step-chip__label" data-i18n="chip.game">Game</span>
+                        <svg class="step-chip__tick" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                        <span class="visually-hidden step-chip__state"></span>
+                    </li>
+                </ol>
 
-            <div class="setting-item">
-                <label for="deadzone">Deadzone</label>
-                <div class="slider-container">
-                    <input type="range" id="deadzone" min="0" max="0.5" step="0.01" value="0.15">
-                    <span class="slider-value" id="deadzoneValue">0.15</span>
+                <div class="stage" id="stage" data-step="1" aria-live="polite">
+                    <article class="stage__panel" data-panel="1">
+                        <span class="stage__numeral" aria-hidden="true">1</span>
+                        <div class="stage__art controller-art controller-art--asleep" data-art="controller"></div>
+                        <h1 class="stage__title" data-i18n="step1.title">Turn on your controller</h1>
+                        <p class="stage__text" data-i18n="step1.text">Press the round button in the middle.</p>
+                        <p class="stage__waiting">
+                            <span class="stage__dots" aria-hidden="true"><span></span><span></span><span></span></span>
+                            <span data-i18n="step1.waiting">Looking for a controller</span>
+                        </p>
+                    </article>
+
+                    <article class="stage__panel" data-panel="2">
+                        <span class="stage__numeral" aria-hidden="true">2</span>
+                        <div class="stage__art controller-art controller-art--awake" data-art="controller">
+                            <span class="stage__badge">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                            </span>
+                        </div>
+                        <h1 class="stage__title" data-i18n="step2.title">Your controller is ready</h1>
+                        <p class="stage__text"><span class="stage__device" id="deviceName"></span> <span data-i18n="step2.text">Press Start, then go to your game.</span></p>
+                        <button class="part part--go" id="startButton" type="button">
+                            <svg class="part__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>
+                            <span data-i18n="step2.button">Start</span>
+                        </button>
+                    </article>
+
+                    <article class="stage__panel" data-panel="3">
+                        <span class="stage__numeral" aria-hidden="true">3</span>
+                        <div class="stage__art stage__art--switch" aria-hidden="true">
+                            <div class="controller-art controller-art--awake controller-art--small" data-art="controller"></div>
+                            <svg class="switch-arrow" viewBox="0 0 120 48"><path d="M6 24h96M84 8l20 16-20 16"/></svg>
+                            <svg class="game-window" viewBox="0 0 120 92">
+                                <rect class="game-window__frame" x="3" y="3" width="114" height="86" rx="10"/>
+                                <path class="game-window__bar" d="M3 22h114"/>
+                                <circle cx="15" cy="12.5" r="3.5"/><circle cx="27" cy="12.5" r="3.5"/><circle cx="39" cy="12.5" r="3.5"/>
+                                <path class="game-window__hill" d="M3 74l26-20 18 12 26-24 44 34v13H3z"/>
+                                <circle class="game-window__sun" cx="92" cy="40" r="8"/>
+                            </svg>
+                        </div>
+                        <h1 class="stage__title" data-i18n="step3.title">Now switch to your game</h1>
+                        <p class="stage__text" data-i18n="step3.text">The controller works as keyboard and mouse until you press Stop.</p>
+                        <button class="part part--stop" id="stopButton" type="button">
+                            <svg class="part__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+                            <span data-i18n="step3.button">Stop</span>
+                        </button>
+                    </article>
                 </div>
-            </div>
+            </section>
 
-            <div class="setting-item">
-                <label for="sensitivity">Mouse Sensitivity</label>
-                <div class="slider-container">
-                    <input type="range" id="sensitivity" min="0.5" max="10" step="0.1" value="2.5">
-                    <span class="slider-value" id="sensitivityValue">2.5</span>
+            <section class="page page--buttons" id="page-buttons" role="tabpanel" aria-labelledby="tab-buttons" hidden>
+                <header class="page__header">
+                    <h1 class="page__title" data-i18n="buttons.title">What each button does</h1>
+                    <p class="page__text" data-i18n="buttons.text">Point at a button to find it on the controller.</p>
+                </header>
+                <div class="buttons-layout">
+                    <div class="diagram-dock">
+                        <div class="diagram callout" data-i18n-aria-label="buttons.diagramLabel" role="img">
+                            <div class="controller-art controller-art--awake controller-art--diagram" data-art="controller" id="diagram"></div>
+                        </div>
+                    </div>
+                    <ul class="parts-list" id="partsList"></ul>
                 </div>
-            </div>
+            </section>
 
-            <div class="setting-item">
-                <label for="threshold">Stick Threshold</label>
-                <div class="slider-container">
-                    <input type="range" id="threshold" min="0.1" max="0.9" step="0.05" value="0.5">
-                    <span class="slider-value" id="thresholdValue">0.5</span>
-                </div>
-            </div>
+            <section class="page page--tune" id="page-tune" role="tabpanel" aria-labelledby="tab-tune" hidden>
+                <header class="page__header">
+                    <h1 class="page__title" data-i18n="tune.title">Fine-tune</h1>
+                    <p class="page__text" data-i18n="tune.text">For grown-ups.</p>
+                </header>
 
-            <button class="reset-btn" id="resetBtn">Reset to Defaults</button>
-        </section>
+                <div class="tune-list">
+                    <div class="tune callout">
+                        <label class="tune__label" for="sensitivity" data-i18n="tune.sensitivity">Look speed</label>
+                        <div class="tune__control">
+                            <span class="tune__end" data-i18n="tune.sensitivity.low">Slow</span>
+                            <input class="tune__slider" type="range" id="sensitivity" min="0.5" max="10" step="0.1" value="2.5">
+                            <span class="tune__end" data-i18n="tune.sensitivity.high">Fast</span>
+                        </div>
+                        <output class="tune__value" for="sensitivity" id="sensitivityValue">2.5</output>
+                    </div>
 
-        <section class="mappings-section">
-            <h2>Button Mapping</h2>
-            <div class="mappings-static">
-                <div class="mapping-item">
-                    <span class="mapping-input">Left Stick</span>
-                    <span class="mapping-arrow">→</span>
-                    <span class="mapping-output">WASD</span>
+                    <div class="tune callout">
+                        <label class="tune__label" for="threshold" data-i18n="tune.threshold">How far to push the stick to walk</label>
+                        <div class="tune__control">
+                            <span class="tune__end" data-i18n="tune.threshold.low">A little</span>
+                            <input class="tune__slider" type="range" id="threshold" min="0.1" max="0.9" step="0.05" value="0.5">
+                            <span class="tune__end" data-i18n="tune.threshold.high">All the way</span>
+                        </div>
+                        <output class="tune__value" for="threshold" id="thresholdValue">0.50</output>
+                    </div>
+
+                    <div class="tune callout">
+                        <label class="tune__label" for="deadzone" data-i18n="tune.deadzone">Ignore stick wobble</label>
+                        <div class="tune__control">
+                            <span class="tune__end" data-i18n="tune.deadzone.low">Less</span>
+                            <input class="tune__slider" type="range" id="deadzone" min="0" max="0.5" step="0.01" value="0.15">
+                            <span class="tune__end" data-i18n="tune.deadzone.high">More</span>
+                        </div>
+                        <output class="tune__value" for="deadzone" id="deadzoneValue">0.15</output>
+                    </div>
                 </div>
-                <div class="mapping-item">
-                    <span class="mapping-input">Right Stick</span>
-                    <span class="mapping-arrow">→</span>
-                    <span class="mapping-output">Mouse</span>
+
+                <div class="reset">
+                    <button class="part part--reset" id="resetButton" type="button">
+                        <svg class="part__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5"/><path d="M5 4.5V9h4.5"/></svg>
+                        <span id="resetLabel" data-i18n="tune.reset">Put everything back</span>
+                    </button>
                 </div>
-            </div>
-            <div class="button-mappings-grid" id="buttonMappingsGrid"></div>
-        </section>
+            </section>
+        </main>
+
+        <p class="notice" id="notice" role="status" aria-live="polite"></p>
     </div>
 
-    <script src="main.js"></script>
+    <template id="controllerTemplate">
+        <svg class="controller" viewBox="0 0 320 220" aria-hidden="true">
+            <rect class="controller__part" data-button="left_trigger" x="62" y="8" width="60" height="30" rx="11"/>
+            <rect class="controller__part" data-button="right_trigger" x="198" y="8" width="60" height="30" rx="11"/>
+            <rect class="controller__part" data-button="left_bumper" x="50" y="24" width="88" height="24" rx="12"/>
+            <rect class="controller__part" data-button="right_bumper" x="182" y="24" width="88" height="24" rx="12"/>
+            <path class="controller__body" d="M96 36H224C262 36 286 52 296 90L312 156C318 184 302 206 280 206C262 206 250 196 240 180L228 162H92L80 180C70 196 58 206 40 206C18 206 2 184 8 156L24 90C34 52 58 36 96 36Z"/>
+            <circle class="controller__well" cx="90" cy="82" r="24"/>
+            <circle class="controller__part controller__stick" data-button="left_thumb" cx="90" cy="82" r="16"/>
+            <circle class="controller__well" cx="196" cy="128" r="22"/>
+            <circle class="controller__part controller__stick" data-button="right_thumb" cx="196" cy="128" r="15"/>
+            <path class="controller__pad" d="M115 101h18v18h18v18h-18v18h-18v-18H97v-18h18z"/>
+            <path class="controller__part controller__pad-arm" data-button="dpad_up" d="M116.5 102.5h15v17h-15z"/>
+            <path class="controller__part controller__pad-arm" data-button="dpad_down" d="M116.5 136.5h15v17h-15z"/>
+            <path class="controller__part controller__pad-arm" data-button="dpad_left" d="M98.5 120.5h17v15h-17z"/>
+            <path class="controller__part controller__pad-arm" data-button="dpad_right" d="M132.5 120.5h17v15h-17z"/>
+            <rect class="controller__part" data-button="select" x="126" y="63" width="22" height="13" rx="6.5"/>
+            <rect class="controller__part" data-button="start" x="172" y="63" width="22" height="13" rx="6.5"/>
+            <circle class="controller__home" cx="160" cy="98" r="10"/>
+            <path class="controller__press-arrow controller__press-arrow--halo" d="M160 214V123M149 134l11-11 11 11"/>
+            <path class="controller__press-arrow" d="M160 214V123M149 134l11-11 11 11"/>
+            <circle class="controller__part" data-button="north" cx="230" cy="60" r="11.5"/>
+            <circle class="controller__part" data-button="west" cx="208" cy="82" r="11.5"/>
+            <circle class="controller__part" data-button="east" cx="252" cy="82" r="11.5"/>
+            <circle class="controller__part" data-button="south" cx="230" cy="104" r="11.5"/>
+        </svg>
+    </template>
+
+    <script type="module" src="main.js"></script>
 </body>
 </html>

@@ -41,6 +41,7 @@ pub fn run() {
             commands::stop_mapping,
             commands::toggle_mapping,
             commands::get_config,
+            commands::get_default_config,
             commands::update_config,
             commands::update_settings,
             commands::update_button_mapping,
